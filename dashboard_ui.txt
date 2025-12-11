@@ -1,0 +1,555 @@
+        return (
+          <div className="space-y-4">
+            {/* 상단: 오늘 출근현황 + 승인대기함 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* BEGIN ADMIN - 주간/야간 출근현황 분리 */}
+              <div className="space-y-4">
+                {/* 주간 출근현황 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold text-blue-800">
+                        {dashboardDateFilter === 'today'
+                          ? getTodayDateWithDay()
+                          : new Date(dashboardSelectedDate).toLocaleDateString(
+                              'ko-KR',
+                              {
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'short',
+                              }
+                            )}{' '}
+                        주간 출근현황 (08:30-17:30)
+                      </h3>
+                      <span className="text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                        총 {dashboardStats.totalDayShift}명
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={dashboardDateFilter}
+                        onChange={(e) => setDashboardDateFilter(e.target.value)}
+                        className="px-1 py-1 text-xs border border-blue-300 rounded bg-white text-blue-700"
+                      >
+                        <option value="today">오늘</option>
+                        <option value="custom">날짜선택</option>
+                      </select>
+                      {dashboardDateFilter === 'custom' && (
+                        <input
+                          type="date"
+                          value={dashboardSelectedDate}
+                          onChange={(e) =>
+                            setDashboardSelectedDate(e.target.value)
+                          }
+                          className="px-1 py-1 text-xs border border-blue-300 rounded bg-white text-blue-700"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div
+                      className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleStatusClick('출근')}
+                    >
+                      <span className="text-xs text-gray-700">출근</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '출근'
+                        )}`}
+                      >
+                        {dashboardStats.present}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleStatusClick('지각')}
+                    >
+                      <span className="text-xs text-gray-700">지각</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '지각'
+                        )}`}
+                      >
+                        {dashboardStats.late}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleStatusClick('결근')}
+                    >
+                      <span className="text-xs text-gray-700">결근</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '결근'
+                        )}`}
+                      >
+                        {dashboardStats.absent}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-blue-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleStatusClick('연차')}
+                    >
+                      <span className="text-xs text-gray-700">연차</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '연차'
+                        )}`}
+                      >
+                        {dashboardStats.leave}명
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 야간 출근현황 */}
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold text-purple-800">
+                        {dashboardDateFilter === 'today'
+                          ? `${getYesterdayDateWithDay()} 출근 → ${getTodayDateWithDay()} 야간 근무현황 (19:00-04:00)`
+                          : (() => {
+                              const selectedDate = new Date(
+                                dashboardSelectedDate
+                              );
+                              const prevDate = new Date(selectedDate);
+                              prevDate.setDate(selectedDate.getDate() - 1);
+                              return `${prevDate.toLocaleDateString('ko-KR', {
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'short',
+                              })} 출근 → ${selectedDate.toLocaleDateString(
+                                'ko-KR',
+                                {
+                                  month: 'long',
+                                  day: 'numeric',
+                                  weekday: 'short',
+                                }
+                              )} 야간 근무현황 (19:00-04:00)`;
+                            })()}
+                      </h3>
+                      <span className="text-sm font-medium text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                        총 {dashboardStats.totalNightShift}명
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={dashboardDateFilter}
+                        onChange={(e) => setDashboardDateFilter(e.target.value)}
+                        className="px-2 py-1 text-xs border border-purple-300 rounded bg-white text-purple-700"
+                      >
+                        <option value="today">오늘</option>
+                        <option value="custom">날짜선택</option>
+                      </select>
+                      {dashboardDateFilter === 'custom' && (
+                        <input
+                          type="date"
+                          value={dashboardSelectedDate}
+                          onChange={(e) =>
+                            setDashboardSelectedDate(e.target.value)
+                          }
+                          className="px-2 py-1 text-xs border border-purple-300 rounded bg-white text-purple-700"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div
+                      className="bg-white p-3 rounded-lg border border-purple-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleNightStatusClick('출근')}
+                    >
+                      <span className="text-xs text-gray-700">출근</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '출근'
+                        )}`}
+                      >
+                        {dashboardStats.nightPresent}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-purple-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleNightStatusClick('지각')}
+                    >
+                      <span className="text-xs text-gray-700">지각</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '지각'
+                        )}`}
+                      >
+                        {dashboardStats.nightLate}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-purple-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleNightStatusClick('결근')}
+                    >
+                      <span className="text-xs text-gray-700">결근</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '결근'
+                        )}`}
+                      >
+                        {dashboardStats.nightAbsent}명
+                      </span>
+                    </div>
+                    <div
+                      className="bg-white p-3 rounded-lg border border-purple-100 flex flex-col items-center cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleNightStatusClick('연차')}
+                    >
+                      <span className="text-xs text-gray-700">연차</span>
+                      <span
+                        className={`text-lg font-bold mt-1 ${getStatusTextColor(
+                          '연차'
+                        )}`}
+                      >
+                        {dashboardStats.nightLeave}명
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* END ADMIN */}
+              {/* 승인대기함 */}
+              <div className="bg-white border border-blue-200 rounded-xl p-4 flex flex-col justify-between">
+                <h3 className="text-lg font-semibold text-blue-800 mb-3">
+                  승인대기함
+                </h3>
+                <div className="flex flex-row gap-4 w-full h-full">
+                  {/* BEGIN ADMIN - 클릭 네비게이션 추가 */}
+                  {/* 연차 승인대기 */}
+                  <div
+                    className="flex-1 flex flex-col items-center justify-center bg-blue-100 rounded-lg p-6 cursor-pointer hover:bg-blue-200 transition-colors"
+                    onClick={() => {
+                      setActiveTab('leave-management');
+                      setLeaveManagementTab('leave-history');
+                    }}
+                  >
+                    <span className="text-2xl font-bold text-blue-900 mb-1">
+                      연차
+                    </span>
+                    <span className="text-5xl font-extrabold text-blue-700">
+                      {
+                        leaveRequests.filter((lr) => lr.status === '대기')
+                          .length
+                      }
+                      건
+                    </span>
+                  </div>
+                  {/* 건의 사항 승인대기 */}
+                  <div
+                    className="flex-1 flex flex-col items-center justify-center bg-blue-100 rounded-lg p-6 cursor-pointer hover:bg-blue-200 transition-colors"
+                    onClick={() => setActiveTab('suggestion-management')}
+                  >
+                    <span className="text-2xl font-bold text-blue-900 mb-1">
+                      건의 사항
+                    </span>
+                    <span className="text-5xl font-extrabold text-blue-700">
+                      {suggestions.filter((s) => s.status === '대기').length}건
+                    </span>
+                  </div>
+                  {/* END ADMIN */}
+                </div>
+              </div>
+            </div>
+            {/* 중단: 목표달성률 + 워라밸/안전/교육 현황 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* 목표달성률 */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold">이번달 목표달성률</h3>
+                  <button
+                    onClick={() => {
+                      setSelectedYear(new Date().getFullYear());
+                      setShowGoalDetailsPopup(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
+                  >
+                    더 보기
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">출근률:</span>
+                    <span
+                      className={`font-bold ${
+                        goalStats.attendanceRate >= 95
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {goalStats.attendanceRate}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">지각률:</span>
+                    <span
+                      className={`font-bold ${
+                        goalStats.lateRate <= 5
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {goalStats.lateRate}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">결근률:</span>
+                    <span
+                      className={`font-bold ${
+                        goalStats.absentRate <= 5
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {goalStats.absentRate}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">퇴사율:</span>
+                    <span
+                      className={`font-bold ${
+                        goalStats.turnoverRate <= 5
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {goalStats.turnoverRate}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* 중단: 워라밸/안전/교육 현황 */}
+              {/* 워라밸 지표 */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-lg font-semibold">워라밸 지표</h4>
+                  <button
+                    onClick={() => {
+                      setSelectedYear(new Date().getFullYear());
+                      setShowWorkLifeBalancePopup(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
+                  >
+                    더 보기
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">평균 특근시간</span>
+                    <span
+                      className={`font-bold ${
+                        workLifeBalanceStats.averageOvertimeHours > 2
+                          ? 'text-red-600'
+                          : workLifeBalanceStats.averageOvertimeHours > 1
+                          ? 'text-orange-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {workLifeBalanceStats.averageOvertimeHours}시간
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">연차 사용률</span>
+                    <span
+                      className={`font-bold ${
+                        workLifeBalanceStats.leaveUsageRate > 70
+                          ? 'text-green-600'
+                          : workLifeBalanceStats.leaveUsageRate > 50
+                          ? 'text-orange-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {workLifeBalanceStats.leaveUsageRate}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">
+                      주 52시간 위반 ({new Date().getFullYear()}-
+                      {String(new Date().getMonth() + 1).padStart(2, '0')})
+                    </span>
+                    <span
+                      className={`font-bold ${
+                        workLifeBalanceStats.weekly52HoursViolation > 0
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {workLifeBalanceStats.weekly52HoursViolation}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">스트레스 지수</span>
+                    <span
+                      className={`font-bold ${
+                        workLifeBalanceStats.stressIndex > 70
+                          ? 'text-red-600'
+                          : workLifeBalanceStats.stressIndex > 50
+                          ? 'text-orange-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {workLifeBalanceStats.stressIndex}점
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* 안전 현황 */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-lg font-semibold">안전 현황</h4>
+                  <button
+                    className="font-bold text-blue-500 text-xs hover:text-blue-600"
+                    onClick={() => setShowSafetyAccidentInput(true)}
+                  >
+                    안전사고 목록/입력
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">금일 안전사고</span>
+                    <span
+                      className={`font-bold ${
+                        getTodaySafetyAccidents() > 0
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {getTodaySafetyAccidents()}건
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">금월 안전사고</span>
+                    <span
+                      className={`font-bold ${
+                        getThisMonthSafetyAccidents() > 0
+                          ? 'text-orange-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {getThisMonthSafetyAccidents()}건
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">금년 안전사고</span>
+                    <span
+                      className={`font-bold ${
+                        getThisYearSafetyAccidents() > 5
+                          ? 'text-red-600'
+                          : getThisYearSafetyAccidents() > 0
+                          ? 'text-orange-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {getThisYearSafetyAccidents()}건
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">무사고 일수</span>
+                    <span
+                      className={`font-bold ${
+                        getAccidentFreeDays() > 100
+                          ? 'text-green-600'
+                          : getAccidentFreeDays() > 30
+                          ? 'text-blue-600'
+                          : 'text-orange-600'
+                      }`}
+                    >
+                      {getAccidentFreeDays()}일
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* 하단: AI 추천사항 */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <Settings className="w-6 h-6 text-purple-600 mr-3" />
+                  <h3 className="text-lg font-semibold text-purple-800">
+                    AI 추천사항
+                  </h3>
+                  <div className="flex items-center ml-4 space-x-3 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+                      <span className="text-gray-600">위험</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+                      <span className="text-gray-600">주의</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+                      <span className="text-gray-600">추천</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                      <span className="text-gray-600">칭찬</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {aiRecommendations.length > 0 && (
+                    <button
+                      onClick={generateAiRecommendations}
+                      disabled={isAnalyzing}
+                      className="flex items-center space-x-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 disabled:bg-gray-100 text-purple-800 text-sm rounded-lg"
+                    >
+                      <span>{isAnalyzing ? '분석 중...' : '🔄 다시 분석'}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowAiHistoryPopup(true)}
+                    className="flex items-center space-x-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm text-blue-800"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>기록</span>
+                  </button>
+                  <button
+                    onClick={() => setShowPromptSettings(true)}
+                    className="flex items-center space-x-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg text-sm text-purple-800"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>설정</span>
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isAnalyzing ? (
+                  <div className="col-span-2 text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <p className="text-gray-500">AI 데이터 분석 중...</p>
+                  </div>
+                ) : aiRecommendations.length > 0 ? (
+                  aiRecommendations.map((rec, index) => (
+                    <div
+                      key={index}
+                      className="bg-white p-4 rounded-lg border border-purple-100"
+                    >
+                      <div className="flex items-start">
+                        <div
+                          className={`w-2 h-2 bg-${rec.color}-500 rounded-full mt-2 mr-3 flex-shrink-0`}
+                        ></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {rec.title}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {rec.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-8">
+                    <p className="text-gray-500">
+                      AI 분석을 실행하시려면 위의 '다시 분석' 버튼을 클릭하세요.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
