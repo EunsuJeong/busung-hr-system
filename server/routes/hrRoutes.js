@@ -137,7 +137,7 @@ router.put('/employees/:employeeId/password', async (req, res) => {
 // ✅ 직원 전체 조회
 router.get('/employees', async (_, res) => {
   try {
-    const employees = await Employee.find();
+    const employees = await Employee.find().lean().exec();
     res.json(employees);
   } catch (error) {
     console.error('❌ 직원 조회 실패:', error.message);

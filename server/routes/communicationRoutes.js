@@ -3,18 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const mongoose = require('mongoose');
 const { Notice, Notification, Suggestion } = require('../models');
-
-// GridFS 설정
-let gfs, gridfsBucket;
-mongoose.connection.once('open', () => {
-  gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-    bucketName: 'uploads'
-  });
-  gfs = gridfsBucket;
-  console.log('✅ GridFS 초기화 완료');
-});
 
 // ==========================================
 // 파일 업로드 설정
@@ -36,8 +25,21 @@ const decodeFilename = (filename) => {
   }
 };
 
-// Multer 설정 (메모리 스토리지 사용 - GridFS에 저장)
-const storage = multer.memoryStorage();
+// Multer 설정
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const decodedName = decodeFilename(file.originalname);
+    const ext = path.extname(decodedName);
+    const nameWithoutExt = path.basename(decodedName, ext);
+    // 파일명에서 특수문자 제거 (안전한 파일명)
+    const safeName = nameWithoutExt.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+    cb(null, `${safeName}-${uniqueSuffix}${ext}`);
+  },
+});
 
 const upload = multer({
   storage: storage,
@@ -65,93 +67,43 @@ const upload = multer({
 // 파일 업로드 API
 // ==========================================
 
-// ✅ 파일 업로드 (단일 파일) - GridFS 사용
-router.post('/upload', upload.single('file'), async (req, res) => {
+// ✅ 파일 업로드 (단일 파일)
+router.post('/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: '파일이 업로드되지 않았습니다.' });
     }
 
-    if (!gridfsBucket) {
-      return res.status(500).json({ message: 'GridFS가 초기화되지 않았습니다.' });
-    }
-
+    const fileUrl = `/uploads/notices/${req.file.filename}`;
     const decodedName = decodeFilename(req.file.originalname);
-    const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${decodedName}`;
+    const fileInfo = {
+      name: decodedName,
+      url: fileUrl,
+      size: `${(req.file.size / 1024).toFixed(1)} KB`,
+    };
 
-    // GridFS에 파일 업로드
-    const uploadStream = gridfsBucket.openUploadStream(uniqueFilename, {
-      metadata: {
-        originalName: decodedName,
-        contentType: req.file.mimetype
-      }
-    });
-
-    uploadStream.end(req.file.buffer);
-
-    uploadStream.on('finish', () => {
-      const fileInfo = {
-        name: decodedName,
-        url: `/api/communication/download/${uploadStream.id}`,
-        size: `${(req.file.size / 1024).toFixed(1)} KB`,
-        fileId: uploadStream.id
-      };
-
-      console.log('✅ GridFS 파일 업로드 완료:', fileInfo);
-      res.json(fileInfo);
-    });
-
-    uploadStream.on('error', (error) => {
-      console.error('❌ GridFS 업로드 오류:', error);
-      res.status(500).json({ message: '파일 업로드 중 오류가 발생했습니다.' });
-    });
-
+    console.log('✅ 파일 업로드 완료:', fileInfo);
+    res.json(fileInfo);
   } catch (error) {
     console.error('❌ 파일 업로드 오류:', error);
     res.status(500).json({ message: '파일 업로드 중 오류가 발생했습니다.' });
   }
 });
 
-// ✅ 다중 파일 업로드 - GridFS 사용
-router.post('/upload-multiple', upload.array('files', 10), async (req, res) => {
+// ✅ 다중 파일 업로드
+router.post('/upload-multiple', upload.array('files', 10), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: '파일이 업로드되지 않았습니다.' });
     }
 
-    if (!gridfsBucket) {
-      return res.status(500).json({ message: 'GridFS가 초기화되지 않았습니다.' });
-    }
+    const filesInfo = req.files.map((file) => ({
+      name: decodeFilename(file.originalname),
+      url: `/uploads/notices/${file.filename}`,
+      size: `${(file.size / 1024).toFixed(1)} KB`,
+    }));
 
-    const uploadPromises = req.files.map((file) => {
-      return new Promise((resolve, reject) => {
-        const decodedName = decodeFilename(file.originalname);
-        const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${decodedName}`;
-
-        const uploadStream = gridfsBucket.openUploadStream(uniqueFilename, {
-          metadata: {
-            originalName: decodedName,
-            contentType: file.mimetype
-          }
-        });
-
-        uploadStream.end(file.buffer);
-
-        uploadStream.on('finish', () => {
-          resolve({
-            name: decodedName,
-            url: `/api/communication/download/${uploadStream.id}`,
-            size: `${(file.size / 1024).toFixed(1)} KB`,
-            fileId: uploadStream.id
-          });
-        });
-
-        uploadStream.on('error', reject);
-      });
-    });
-
-    const filesInfo = await Promise.all(uploadPromises);
-    console.log(`✅ GridFS ${filesInfo.length}개 파일 업로드 완료`);
+    console.log(`✅ ${filesInfo.length}개 파일 업로드 완료`);
     res.json(filesInfo);
   } catch (error) {
     console.error('❌ 파일 업로드 오류:', error);
@@ -159,47 +111,26 @@ router.post('/upload-multiple', upload.array('files', 10), async (req, res) => {
   }
 });
 
-// ✅ 파일 다운로드 (GridFS에서 가져오기)
-router.get('/download/:fileId', async (req, res) => {
+// ✅ 파일 다운로드 (한글 파일명 지원)
+router.get('/download/:filename', (req, res) => {
   try {
-    const fileId = req.params.fileId;
+    const filename = req.params.filename;
+    const filePath = path.join(uploadDir, filename);
 
-    if (!gridfsBucket) {
-      return res.status(500).json({ message: 'GridFS가 초기화되지 않았습니다.' });
-    }
+    console.log('📥 파일 다운로드 요청:', filename);
+    console.log('📁 파일 경로:', filePath);
 
-    console.log('📥 파일 다운로드 요청 (GridFS):', fileId);
-
-    // 기존 파일 경로 형식인 경우 (예: KakaoTalk_20240502...)
-    if (fileId.includes('.') || fileId.includes('-') && fileId.length > 24) {
-      console.log('⚠️ 기존 파일 시스템 경로 (복구 불가):', fileId);
-      return res.status(410).json({ 
-        message: '이 파일은 이전 시스템에서 저장되어 현재 사용할 수 없습니다. 관리자에게 문의하세요.',
-        isLegacyFile: true 
-      });
-    }
-
-    // ObjectId로 변환
-    let objectId;
-    try {
-      objectId = new mongoose.Types.ObjectId(fileId);
-    } catch (e) {
-      console.log('❌ 잘못된 파일 ID:', fileId);
-      return res.status(400).json({ message: '잘못된 파일 ID입니다.' });
-    }
-
-    // GridFS에서 파일 정보 찾기
-    const files = await gridfsBucket.find({ _id: objectId }).toArray();
-    
-    if (!files || files.length === 0) {
-      console.error('❌ 파일을 찾을 수 없음:', fileId);
+    // 파일 존재 여부 확인
+    if (!fs.existsSync(filePath)) {
+      console.error('❌ 파일을 찾을 수 없음:', filePath);
       return res.status(404).json({ message: '파일을 찾을 수 없습니다.' });
     }
 
-    const file = files[0];
-    const originalName = file.metadata?.originalName || file.filename;
+    // 원본 파일명 추출 (타임스탬프 제거)
+    const match = filename.match(/^(.+)-\d+-\d+(\.[^.]+)$/);
+    const originalName = match ? match[1] + match[2] : filename;
 
-    console.log('✅ GridFS 파일 다운로드:', originalName);
+    console.log('✅ 파일 다운로드:', originalName);
 
     // 한글 파일명을 위한 Content-Disposition 헤더 설정
     const encodedFilename = encodeURIComponent(originalName);
@@ -207,17 +138,11 @@ router.get('/download/:fileId', async (req, res) => {
       'Content-Disposition',
       `attachment; filename*=UTF-8''${encodedFilename}`
     );
-    res.setHeader('Content-Type', file.metadata?.contentType || 'application/octet-stream');
+    res.setHeader('Content-Type', 'application/octet-stream');
 
-    // GridFS에서 파일 스트리밍
-    const downloadStream = gridfsBucket.openDownloadStream(objectId);
-    
-    downloadStream.on('error', (error) => {
-      console.error('❌ GridFS 다운로드 오류:', error);
-      res.status(500).json({ message: '파일 다운로드 중 오류가 발생했습니다.' });
-    });
-
-    downloadStream.pipe(res);
+    // 파일 스트리밍
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
   } catch (error) {
     console.error('❌ 파일 다운로드 오류:', error);
     res.status(500).json({ message: '파일 다운로드 중 오류가 발생했습니다.' });
