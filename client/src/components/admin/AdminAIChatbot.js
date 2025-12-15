@@ -41,7 +41,9 @@ const AdminAIChatbot = ({
     setShowHistoryModal(true);
     setIsLoadingHistory(true);
     try {
-      const response = await fetch('http://localhost:5000/api/ai/logs?limit=100');
+      const apiUrl =
+        process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/ai/logs?limit=100`);
       if (response.ok) {
         const logs = await response.json();
         setChatHistory(logs);
@@ -279,12 +281,11 @@ const AdminAIChatbot = ({
                         )}
 
                       <div className="text-xs opacity-70 mt-2">
-                        {message.timestamp ?
-                          (message.timestamp instanceof Date ?
-                            message.timestamp.toLocaleTimeString() :
-                            new Date(message.timestamp).toLocaleTimeString()) :
-                          new Date().toLocaleTimeString()
-                        }
+                        {message.timestamp
+                          ? message.timestamp instanceof Date
+                            ? message.timestamp.toLocaleTimeString()
+                            : new Date(message.timestamp).toLocaleTimeString()
+                          : new Date().toLocaleTimeString()}
                         {message.model && ` • ${message.model}`}
                       </div>
                     </div>
@@ -360,7 +361,12 @@ const AdminAIChatbot = ({
                     value={chatInput || ''}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter' && chatInput && typeof chatInput === 'string' && chatInput.trim()) {
+                      if (
+                        e.key === 'Enter' &&
+                        chatInput &&
+                        typeof chatInput === 'string' &&
+                        chatInput.trim()
+                      ) {
                         handleSendMessage();
                       }
                     }}
@@ -370,7 +376,11 @@ const AdminAIChatbot = ({
                 </div>
                 <button
                   onClick={handleSendMessage}
-                  disabled={!chatInput || typeof chatInput !== 'string' || !chatInput.trim()}
+                  disabled={
+                    !chatInput ||
+                    typeof chatInput !== 'string' ||
+                    !chatInput.trim()
+                  }
                   className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {false ? (

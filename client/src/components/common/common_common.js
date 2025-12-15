@@ -1494,7 +1494,6 @@ export const useAttendanceSync = (year, month, department = 'all') => {
 
     // 근태 데이터 업데이트 수신
     const handleAttendanceUpdated = (data) => {
-
       if (data.updateType === 'single_record') {
         // 단일 레코드 업데이트
         setAttendanceData((prev) => ({
@@ -2263,24 +2262,28 @@ ${internalContext.safetyAccidents
                 ...prev,
                 {
                   type: 'error',
-                  message: '❌ 다운로드 권한이 없습니다. 시스템 관리에서 권한을 활성화해주세요.',
+                  message:
+                    '❌ 다운로드 권한이 없습니다. 시스템 관리에서 권한을 활성화해주세요.',
                 },
               ]);
               continue;
             }
 
-            const downloadResponse = await fetch(`${API_BASE_URL}/ai/chatbot/download`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                format: downloadCmd.format,
-                dataType: downloadCmd.dataType,
-                filter: downloadCmd.filter || {},
-                permissions: chatbotPermissions,
-              }),
-            });
+            const downloadResponse = await fetch(
+              `${API_BASE_URL}/ai/chatbot/download`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  format: downloadCmd.format,
+                  dataType: downloadCmd.dataType,
+                  filter: downloadCmd.filter || {},
+                  permissions: chatbotPermissions,
+                }),
+              }
+            );
 
             if (!downloadResponse.ok) {
               throw new Error('다운로드 요청 실패');
@@ -2291,7 +2294,11 @@ ${internalContext.safetyAccidents
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = downloadResponse.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `download_${Date.now()}`;
+            a.download =
+              downloadResponse.headers
+                .get('Content-Disposition')
+                ?.split('filename=')[1]
+                ?.replace(/"/g, '') || `download_${Date.now()}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -2304,7 +2311,6 @@ ${internalContext.safetyAccidents
                 message: `✅ ${downloadCmd.dataType} 데이터를 ${downloadCmd.format} 형식으로 다운로드했습니다.`,
               },
             ]);
-
           } catch (error) {
             devLog('❌ 다운로드 오류:', error);
             setAiMessages((prev) => [
@@ -2691,7 +2697,9 @@ export const useAuth = (dependencies = {}) => {
       // 1. 관리자 로그인 확인 (DB API 사용)
       try {
         const adminResponse = await fetch(
-          'http://localhost:5000/api/admin/admins/login',
+          `${
+            process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api'
+          }/admin/admins/login`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2730,7 +2738,10 @@ export const useAuth = (dependencies = {}) => {
 
             // 관리자 로그인 시 근무형태 자동 분석
             try {
-              await fetch('http://localhost:5000/api/hr/analyze-work-type', {
+              const apiUrl =
+                process.env.REACT_APP_API_BASE_URL ||
+                'http://localhost:5000/api';
+              await fetch(`${apiUrl}/hr/analyze-work-type`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2769,15 +2780,21 @@ export const useAuth = (dependencies = {}) => {
 
           // 일반직원 로그인 시 해당 직원만 근무형태 자동 분석
           try {
-            await fetch('http://localhost:5000/api/hr/analyze-work-type', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                year: now.getFullYear(),
-                month: now.getMonth() + 1,
-                employeeId: employeeUser.employeeId || employeeUser.id, // 해당 직원만
-              }),
-            });
+            await fetch(
+              `${
+                process.env.REACT_APP_API_BASE_URL ||
+                'http://localhost:5000/api'
+              }/hr/analyze-work-type`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  year: now.getFullYear(),
+                  month: now.getMonth() + 1,
+                  employeeId: employeeUser.employeeId || employeeUser.id, // 해당 직원만
+                }),
+              }
+            );
           } catch (error) {
             console.error('❌ 근무형태 자동 분석 실패:', error);
           }
@@ -2785,17 +2802,28 @@ export const useAuth = (dependencies = {}) => {
           // 일반직원 로그인 시 급여 데이터 불러오기
           try {
             const employeeId = employeeUser.employeeId || employeeUser.id;
-            const payrollResponse = await PayrollAPI.getEmployeePayroll(employeeId, null, 12);
+            const payrollResponse = await PayrollAPI.getEmployeePayroll(
+              employeeId,
+              null,
+              12
+            );
 
             if (payrollResponse && payrollResponse.data) {
               // payrollByMonth 형식으로 변환하여 저장
               const payrollData = {};
               payrollResponse.data.forEach((item) => {
-                const yearMonth = `${item.year}-${String(item.month).padStart(2, '0')}`;
+                const yearMonth = `${item.year}-${String(item.month).padStart(
+                  2,
+                  '0'
+                )}`;
                 payrollData[yearMonth] = item;
               });
               setPayrollByMonth(payrollData);
-              console.log('✅ 로그인 시 급여 데이터 불러오기 완료:', Object.keys(payrollData).length, '건');
+              console.log(
+                '✅ 로그인 시 급여 데이터 불러오기 완료:',
+                Object.keys(payrollData).length,
+                '건'
+              );
             }
           } catch (error) {
             console.error('❌ 로그인 시 급여 데이터 불러오기 실패:', error);
@@ -2837,7 +2865,6 @@ export const useAuth = (dependencies = {}) => {
 
   // [3_일반직원 모드] 3.1_사원 정보 - 비밀번호 변경
   const handleChangePassword = useCallback(async () => {
-
     setChangePasswordError('');
     setChangePasswordSuccess('');
 
@@ -4387,7 +4414,6 @@ class HolidayService {
         });
 
         if (outdatedYears.length > 0) {
-
           // 캐시 초기화 후 새로운 데이터 로드 (배치로 처리)
           const batchSize = 5;
           for (let i = 0; i < outdatedYears.length; i += batchSize) {
@@ -4422,7 +4448,6 @@ class HolidayService {
       tomorrow.setHours(0, 0, 0, 0); // 다음날 자정 00:00:00
 
       const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-
 
       this.updateTimer = setTimeout(updateHolidays, timeUntilMidnight);
     };
@@ -4900,7 +4925,9 @@ export const executeAiCommand = async ({
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: '실행 실패' }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: '실행 실패' }));
       throw new Error(errorData.error || '실행 실패');
     }
 
@@ -4911,7 +4938,9 @@ export const executeAiCommand = async ({
     if (logSystemEvent) {
       logSystemEvent(
         'AI_COMMAND_EXECUTED',
-        `AI 챗봇이 ${dataType} ${action === 'create' ? '생성' : action === 'update' ? '수정' : '삭제'} 수행`,
+        `AI 챗봇이 ${dataType} ${
+          action === 'create' ? '생성' : action === 'update' ? '수정' : '삭제'
+        } 수행`,
         { action, dataType, userId: currentUser?.id },
         'INFO',
         currentUser,
@@ -4926,7 +4955,9 @@ export const executeAiCommand = async ({
 
     return {
       success: true,
-      message: `${dataType} ${action === 'create' ? '생성' : action === 'update' ? '수정' : '삭제'} 완료`,
+      message: `${dataType} ${
+        action === 'create' ? '생성' : action === 'update' ? '수정' : '삭제'
+      } 완료`,
       result: result.result,
     };
   } catch (error) {

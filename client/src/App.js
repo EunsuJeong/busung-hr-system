@@ -638,7 +638,11 @@ const HRManagementSystem = () => {
             return baseEmp;
           });
           setEmployees(formattedEmployees);
-          devLog('✅ [초기 로드] 직원 데이터 로드 완료:', dbEmployees.length, '명');
+          devLog(
+            '✅ [초기 로드] 직원 데이터 로드 완료:',
+            dbEmployees.length,
+            '명'
+          );
         }
 
         // 2. 연차 데이터 로드
@@ -669,7 +673,11 @@ const HRManagementSystem = () => {
             rejectionReason: leave.rejectionReason,
           }));
           setLeaveRequests(formattedLeaves);
-          devLog('✅ [초기 로드] 연차 데이터 로드 완료:', dbLeaves.length, '건');
+          devLog(
+            '✅ [초기 로드] 연차 데이터 로드 완료:',
+            dbLeaves.length,
+            '건'
+          );
         } else {
           setLeaveRequests([]);
           devLog('✅ [초기 로드] 연차 데이터 로드 완료: 0건');
@@ -693,30 +701,34 @@ const HRManagementSystem = () => {
               status: emp.status,
               address: emp.address,
             };
-            const formattedLeaves = dbLeaves ? dbLeaves.map((leave) => ({
-              id: leave._id,
-              employeeId: leave.employeeId,
-              employeeName: leave.employeeName,
-              name: leave.employeeName || leave.name,
-              department: leave.department,
-              leaveType: leave.leaveType,
-              type: leave.leaveType || leave.type,
-              startDate: formatDateByLang(leave.startDate),
-              endDate: formatDateByLang(leave.endDate),
-              days: leave.days,
-              reason: leave.reason,
-              contact: leave.contact,
-              status: leave.status,
-              requestDate: formatDateByLang(leave.requestDate || leave.createdAt),
-              approvedAt: leave.approvedAt,
-              approver: leave.approver,
-              approverName: leave.approverName,
-              approvedDays: leave.approvedDays,
-              rejectedAt: leave.rejectedAt,
-              rejectedBy: leave.rejectedBy,
-              rejectedByName: leave.rejectedByName,
-              rejectionReason: leave.rejectionReason,
-            })) : [];
+            const formattedLeaves = dbLeaves
+              ? dbLeaves.map((leave) => ({
+                  id: leave._id,
+                  employeeId: leave.employeeId,
+                  employeeName: leave.employeeName,
+                  name: leave.employeeName || leave.name,
+                  department: leave.department,
+                  leaveType: leave.leaveType,
+                  type: leave.leaveType || leave.type,
+                  startDate: formatDateByLang(leave.startDate),
+                  endDate: formatDateByLang(leave.endDate),
+                  days: leave.days,
+                  reason: leave.reason,
+                  contact: leave.contact,
+                  status: leave.status,
+                  requestDate: formatDateByLang(
+                    leave.requestDate || leave.createdAt
+                  ),
+                  approvedAt: leave.approvedAt,
+                  approver: leave.approver,
+                  approverName: leave.approverName,
+                  approvedDays: leave.approvedDays,
+                  rejectedAt: leave.rejectedAt,
+                  rejectedBy: leave.rejectedBy,
+                  rejectedByName: leave.rejectedByName,
+                  rejectionReason: leave.rejectionReason,
+                }))
+              : [];
             const annualData = calculateEmployeeAnnualLeaveUtil(
               baseEmp,
               formattedLeaves
@@ -777,7 +789,11 @@ const HRManagementSystem = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   // *[1_공통] 1.3.4.1_급여 내역 생성 wrapper*
-  const generateSalaryHistory = (joinDate, employeeId = currentUser?.id, customPayrollData = null) => {
+  const generateSalaryHistory = (
+    joinDate,
+    employeeId = currentUser?.id,
+    customPayrollData = null
+  ) => {
     return generateSalaryHistoryUtil(
       customPayrollData || payrollByMonth,
       currentUser,
@@ -1131,7 +1147,11 @@ const HRManagementSystem = () => {
 
         // 현재 월부터 거꾸로 12개월 확인
         for (let i = 0; i < 12; i++) {
-          const checkDate = new Date(currentYear, currentDate.getMonth() - i, 1);
+          const checkDate = new Date(
+            currentYear,
+            currentDate.getMonth() - i,
+            1
+          );
           const year = checkDate.getFullYear();
           const month = checkDate.getMonth() + 1;
 
@@ -1148,7 +1168,9 @@ const HRManagementSystem = () => {
                 : [];
 
               if (data.length > 0) {
-                devLog(`✅ 최근 근태 데이터 발견: ${year}년 ${month}월 (${data.length}건)`);
+                devLog(
+                  `✅ 최근 근태 데이터 발견: ${year}년 ${month}월 (${data.length}건)`
+                );
                 setAttendanceSheetYear(year);
                 setAttendanceSheetMonth(month);
                 return;
@@ -1508,20 +1530,26 @@ const HRManagementSystem = () => {
           // 실시간 알림 필터링 (notificationType === '실시간' 또는 '시스템')
           const realtimeLogsToActivate = loadedLogs.filter(
             (log) =>
-              (log.notificationType === '실시간' || log.notificationType === '시스템') &&
+              (log.notificationType === '실시간' ||
+                log.notificationType === '시스템') &&
               (log.repeatCycle === '즉시' || !log.repeatCycle)
           );
 
           // 알림 로그를 실시간 알림 형식으로 변환
-          const convertedRealtimeNotifications = realtimeLogsToActivate.map((log) => {
-            return {
-              ...log,
-              _id: log._id,
-              id: log._id || log.id || Date.now() + Math.random(),
-              status: log.notificationType === '시스템' ? '진행중' : (log.status || '진행중'),
-              isAutoGenerated: log.notificationType === '시스템',
-            };
-          });
+          const convertedRealtimeNotifications = realtimeLogsToActivate.map(
+            (log) => {
+              return {
+                ...log,
+                _id: log._id,
+                id: log._id || log.id || Date.now() + Math.random(),
+                status:
+                  log.notificationType === '시스템'
+                    ? '진행중'
+                    : log.status || '진행중',
+                isAutoGenerated: log.notificationType === '시스템',
+              };
+            }
+          );
 
           if (convertedRealtimeNotifications.length > 0) {
             setRealtimeNotifications(convertedRealtimeNotifications);
@@ -1533,10 +1561,12 @@ const HRManagementSystem = () => {
           );
 
           if (regularLogsToActivate.length > 0) {
-            const convertedRegularNotifications = regularLogsToActivate.map((log) => ({
-              ...log,
-              id: log._id || log.id || Date.now() + Math.random(),
-            }));
+            const convertedRegularNotifications = regularLogsToActivate.map(
+              (log) => ({
+                ...log,
+                id: log._id || log.id || Date.now() + Math.random(),
+              })
+            );
             setRegularNotifications(convertedRegularNotifications);
           }
         }
@@ -1977,7 +2007,9 @@ const HRManagementSystem = () => {
               : [];
 
             if (data.length > 0) {
-              devLog(`✅ [초기 로드] 최근 근태 데이터 발견: ${year}년 ${month}월 (${data.length}건)`);
+              devLog(
+                `✅ [초기 로드] 최근 근태 데이터 발견: ${year}년 ${month}월 (${data.length}건)`
+              );
               setAttendanceSheetYear(year);
               setAttendanceSheetMonth(month);
               return;
@@ -3093,7 +3125,9 @@ const HRManagementSystem = () => {
   React.useEffect(() => {
     if (!currentUser) return;
 
-    const socket = io('http://localhost:5000', {
+    const serverUrl =
+      process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+    const socket = io(serverUrl, {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       transports: ['polling', 'websocket'],
@@ -4462,7 +4496,9 @@ const HRManagementSystem = () => {
     loadNoticesFromDB();
 
     // Socket.io 연결 설정 (실시간 업데이트용)
-    const socket = io('http://localhost:5000', {
+    const serverUrl =
+      process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
+    const socket = io(serverUrl, {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       transports: ['polling', 'websocket'],
@@ -4660,8 +4696,16 @@ const HRManagementSystem = () => {
 
       generateAiRecommendations();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, activeTab, unifiedApiKey, geminiApiKey, chatgptApiKey, claudeApiKey, isAnalyzing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentUser,
+    activeTab,
+    unifiedApiKey,
+    geminiApiKey,
+    chatgptApiKey,
+    claudeApiKey,
+    isAnalyzing,
+  ]);
 
   // *[2_관리자 모드] 2.1_대시보드 AI 추천 히스토리 초기 로딩* (첫 로그인 시에만)
   React.useEffect(() => {
@@ -5370,7 +5414,8 @@ const HRManagementSystem = () => {
   const totalAnnualLeave = currentUser
     ? calculateAnnualLeave(currentUser.joinDate)
     : 0;
-  const usedAnnualLeave = currentUser && currentUser.id ? getUsedAnnualLeave(currentUser.id) : 0;
+  const usedAnnualLeave =
+    currentUser && currentUser.id ? getUsedAnnualLeave(currentUser.id) : 0;
   const remainAnnualLeave = totalAnnualLeave - usedAnnualLeave;
 
   // *[2_관리자 모드] 2.1_대시보드 계산 함수 훅*

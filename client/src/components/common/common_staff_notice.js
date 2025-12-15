@@ -98,7 +98,9 @@ export const downloadFile = (file, devLog, event = null) => {
       devLog && devLog('URL 다운로드 시도');
       const link = document.createElement('a');
       const filename = file.url.split('/').pop();
-      link.href = `http://localhost:5000/api/communication/download/${filename}`;
+      const apiUrl =
+        process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+      link.href = `${apiUrl}/communication/download/${filename}`;
       link.download = file.name || 'download';
       link.target = '_blank';
       document.body.appendChild(link);

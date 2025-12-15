@@ -4,7 +4,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import {
   getGoalDetailDataUtil,
   getWorkLifeBalanceDataByYearUtil,
-  getWorkLifeDetailDataUtil
+  getWorkLifeDetailDataUtil,
 } from '../common/common_admin_dashboard';
 
 /**
@@ -185,7 +185,8 @@ const AdminDashboard = ({
       }
 
       try {
-        const BASE_URL = 'http://localhost:5000/api';
+        const BASE_URL =
+          process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
         const month = goalDetailMonth + 1;
         const response = await fetch(
           `${BASE_URL}/attendance/monthly/${selectedYear}/${month}`
@@ -217,18 +218,23 @@ const AdminDashboard = ({
         return;
       }
 
-      const BASE_URL = 'http://localhost:5000/api';
+      const BASE_URL =
+        process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
       // Promise.all로 병렬 처리
       const promises = [];
       for (let month = 1; month <= 12; month++) {
         promises.push(
           fetch(`${BASE_URL}/attendance/monthly/${selectedYear}/${month}`)
-            .then(response => {
+            .then((response) => {
               if (!response.ok) return { month, data: [] };
-              return response.json().then(result => ({
+              return response.json().then((result) => ({
                 month,
-                data: result.success ? result.data : Array.isArray(result) ? result : []
+                data: result.success
+                  ? result.data
+                  : Array.isArray(result)
+                  ? result
+                  : [],
               }));
             })
             .catch(() => ({ month, data: [] }))
@@ -1712,657 +1718,779 @@ const AdminDashboard = ({
             <div className="flex-1 overflow-y-auto p-6">
               {(() => {
                 // workLifeYearData를 사용해서 커스텀 getAttendanceForEmployee 생성
-                const customGetAttendanceForEmployee = (employeeId, year, month, day) => {
+                const customGetAttendanceForEmployee = (
+                  employeeId,
+                  year,
+                  month,
+                  day
+                ) => {
                   const monthData = workLifeYearData[month] || [];
-                  const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const dateKey = `${year}-${String(month).padStart(
+                    2,
+                    '0'
+                  )}-${String(day).padStart(2, '0')}`;
                   const record = monthData.find(
-                    (r) => r.employeeId === employeeId && r.date.startsWith(dateKey)
+                    (r) =>
+                      r.employeeId === employeeId && r.date.startsWith(dateKey)
                   );
-                  return record ? { checkIn: record.checkIn || '', checkOut: record.checkOut || '' } : { checkIn: '', checkOut: '' };
+                  return record
+                    ? {
+                        checkIn: record.checkIn || '',
+                        checkOut: record.checkOut || '',
+                      }
+                    : { checkIn: '', checkOut: '' };
                 };
 
                 // getWorkLifeBalanceDataByYearUtil 직접 호출 (실제 함수 사용)
-                const workLifeData = Object.keys(workLifeYearData).length > 0
-                  ? getWorkLifeBalanceDataByYearUtil(
-                      selectedYear,
-                      employees,
-                      getDaysInMonth,
-                      customGetAttendanceForEmployee,
-                      calcDailyWage,
-                      calculateMonthlyLeaveUsageRate,
-                      getUsedAnnualLeave,
-                      calculateAnnualLeave,
-                      safetyAccidents,
-                      suggestions,
-                      evaluations,
-                      notices,
-                      leaveRequests
-                    )
-                  : { overtime: Array(12).fill(0), leaveUsage: Array(12).fill(0), violations: Array(12).fill(0), stressIndex: Array(12).fill(0) };
+                const workLifeData =
+                  Object.keys(workLifeYearData).length > 0
+                    ? getWorkLifeBalanceDataByYearUtil(
+                        selectedYear,
+                        employees,
+                        getDaysInMonth,
+                        customGetAttendanceForEmployee,
+                        calcDailyWage,
+                        calculateMonthlyLeaveUsageRate,
+                        getUsedAnnualLeave,
+                        calculateAnnualLeave,
+                        safetyAccidents,
+                        suggestions,
+                        evaluations,
+                        notices,
+                        leaveRequests
+                      )
+                    : {
+                        overtime: Array(12).fill(0),
+                        leaveUsage: Array(12).fill(0),
+                        violations: Array(12).fill(0),
+                        stressIndex: Array(12).fill(0),
+                      };
 
                 return (
-              <div className="space-y-6">
-                {/* 평균 특근시간 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">평균 특근시간</h3>
-                    <span className="text-xs text-gray-500 px-2 py-1 rounded">
-                      기준: 총 특근시간 ÷ 전체 직원수 (10시간 이하 양호)
-                    </span>
-                  </div>
-                        <div className="h-40 mb-4 worklife-chart-container">
-                          <Line
-                            key={`overtime-chart-${selectedYear}-${Object.keys(workLifeYearData).length}`}
-                            data={{
-                              labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                              datasets: [{
+                  <div className="space-y-6">
+                    {/* 평균 특근시간 */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">평균 특근시간</h3>
+                        <span className="text-xs text-gray-500 px-2 py-1 rounded">
+                          기준: 총 특근시간 ÷ 전체 직원수 (10시간 이하 양호)
+                        </span>
+                      </div>
+                      <div className="h-40 mb-4 worklife-chart-container">
+                        <Line
+                          key={`overtime-chart-${selectedYear}-${
+                            Object.keys(workLifeYearData).length
+                          }`}
+                          data={{
+                            labels: [
+                              '1월',
+                              '2월',
+                              '3월',
+                              '4월',
+                              '5월',
+                              '6월',
+                              '7월',
+                              '8월',
+                              '9월',
+                              '10월',
+                              '11월',
+                              '12월',
+                            ],
+                            datasets: [
+                              {
                                 label: '특근시간',
                                 data: workLifeData.overtime,
                                 borderColor: 'rgba(59, 130, 246, 1)',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                pointBackgroundColor: workLifeData.overtime.map((hours) =>
-                                  hours === null ? 'rgba(200, 200, 200, 0.5)' : hours <= 10 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
+                                pointBackgroundColor: workLifeData.overtime.map(
+                                  (hours) =>
+                                    hours === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : hours <= 10
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
                                 ),
-                                pointBorderColor: workLifeData.overtime.map((hours) =>
-                                  hours === null ? 'rgba(200, 200, 200, 0.5)' : hours <= 10 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
+                                pointBorderColor: workLifeData.overtime.map(
+                                  (hours) =>
+                                    hours === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : hours <= 10
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
                                 ),
                                 pointRadius: 6,
                                 tension: 0.1,
-                              }],
-                            }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 70,
-                          },
-                        },
-                        onClick: (event, elements) => {
-                          if (elements.length > 0) {
-                            const monthIndex = elements[0].index;
-                            setWorkLifeDetailMetric('평균 특근시간');
-                            setWorkLifeDetailMonth(monthIndex);
-                            setShowWorkLifeDetailPopup(true);
-                          }
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-center">1월</th>
-                          <th className="p-2 text-center">2월</th>
-                          <th className="p-2 text-center">3월</th>
-                          <th className="p-2 text-center">4월</th>
-                          <th className="p-2 text-center">5월</th>
-                          <th className="p-2 text-center">6월</th>
-                          <th className="p-2 text-center">7월</th>
-                          <th className="p-2 text-center">8월</th>
-                          <th className="p-2 text-center">9월</th>
-                          <th className="p-2 text-center">10월</th>
-                          <th className="p-2 text-center">11월</th>
-                          <th className="p-2 text-center">12월</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {workLifeData.overtime.map((hours, index) => (
-                            <td
-                              key={index}
-                              className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
-                                hours === null ? 'text-gray-400' : hours <= 10 ? 'text-green-600' : 'text-red-600'
-                              }`}
-                              onClick={() => {
-                                if (hours !== null) {
-                                  setWorkLifeDetailMetric('평균 특근시간');
-                                  setWorkLifeDetailMonth(index);
-                                  setShowWorkLifeDetailPopup(true);
-                                }
-                              }}
-                            >
-                              {hours === null ? '-' : `${hours}시간`}
-                            </td>
-                          ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 연차 사용률 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">연차 사용률</h3>
-                    <span className="text-xs text-gray-500 px-2 py-1 rounded">
-                      기준: 누적 사용일수 ÷ 연간 총 연차일수 (70% 이상 양호)
-                    </span>
-                  </div>
-                  <div className="h-40 mb-4 worklife-chart-container">
-                    <Bar
-                      key={`leaveusage-chart-${selectedYear}-${leaveRequests.length}`}
-                      data={(() => {
-                        const data = getWorkLifeBalanceDataByYear(selectedYear);
-                        return {
-                          labels: [
-                            '1월',
-                            '2월',
-                            '3월',
-                            '4월',
-                            '5월',
-                            '6월',
-                            '7월',
-                            '8월',
-                            '9월',
-                            '10월',
-                            '11월',
-                            '12월',
-                          ],
-                          datasets: [
-                            {
-                              label: '연차 사용률(%)',
-                              data: data.leaveUsage,
-                              backgroundColor: data.leaveUsage.map((rate) =>
-                                rate === null
-                                  ? 'rgba(200, 200, 200, 0.3)'
-                                  : rate >= 70
-                                  ? 'rgba(34, 197, 94, 0.8)'
-                                  : 'rgba(239, 68, 68, 0.8)'
-                              ),
-                              borderColor: data.leaveUsage.map((rate) =>
-                                rate === null
-                                  ? 'rgba(200, 200, 200, 0.5)'
-                                  : rate >= 70
-                                  ? 'rgba(34, 197, 94, 1)'
-                                  : 'rgba(239, 68, 68, 1)'
-                              ),
-                              borderWidth: 1,
-                            },
-                          ],
-                        };
-                      })()}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 100,
-                          },
-                        },
-                        onClick: (event, elements) => {
-                          if (elements.length > 0) {
-                            const monthIndex = elements[0].index;
-                            setWorkLifeDetailMetric('연차 사용률');
-                            setWorkLifeDetailMonth(monthIndex);
-                            setShowWorkLifeDetailPopup(true);
-                          }
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-center">1월</th>
-                          <th className="p-2 text-center">2월</th>
-                          <th className="p-2 text-center">3월</th>
-                          <th className="p-2 text-center">4월</th>
-                          <th className="p-2 text-center">5월</th>
-                          <th className="p-2 text-center">6월</th>
-                          <th className="p-2 text-center">7월</th>
-                          <th className="p-2 text-center">8월</th>
-                          <th className="p-2 text-center">9월</th>
-                          <th className="p-2 text-center">10월</th>
-                          <th className="p-2 text-center">11월</th>
-                          <th className="p-2 text-center">12월</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {(() => {
-                            const data =
-                              getWorkLifeBalanceDataByYear(selectedYear);
-                            return data.leaveUsage.map((rate, index) => (
-                              <td
-                                key={index}
-                                className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
-                                  rate === null
-                                    ? 'text-gray-400'
-                                    : rate >= 70
-                                    ? 'text-green-600'
-                                    : 'text-red-600'
-                                }`}
-                                onClick={() => {
-                                  if (rate !== null) {
-                                    setWorkLifeDetailMetric('연차 사용률');
-                                    setWorkLifeDetailMonth(index);
-                                    setShowWorkLifeDetailPopup(true);
-                                  }
-                                }}
-                              >
-                                {rate === null ? '-' : `${rate}%`}
-                              </td>
-                            ));
-                          })()}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 주 52시간 위반 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">
-                      {selectedYear}-
-                      {String(new Date().getMonth() + 1).padStart(2, '0')} 주
-                      52시간 위반
-                    </h3>
-                    <span className="text-xs text-gray-500 px-2 py-1 rounded">
-                      기준: 주간 총 근무시간 52시간 초과 직원 수 (0건 양호)
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    {(() => {
-                      const currentMonthViolations = getViolationDetails(
-                        selectedYear,
-                        new Date().getMonth()
-                      );
-
-                      // 위반 총 시간 계산
-                      const totalViolationHours = currentMonthViolations.reduce(
-                        (sum, v) => sum + (parseFloat(v.hours) || 0),
-                        0
-                      );
-
-                      // 위반 기간 (주 수) 계산
-                      const weeksSet = new Set();
-                      currentMonthViolations.forEach((v) => {
-                        if (v.weeks) {
-                          // "8/4 ~ 8/10, 8/11 ~ 8/17" 형식을 파싱
-                          const weekParts = v.weeks
-                            .split(',')
-                            .map((w) => w.trim());
-                          weekParts.forEach((w) => weeksSet.add(w));
-                        }
-                      });
-                      const totalWeeks = weeksSet.size;
-
-                      // 위반 직원 수
-                      const totalEmployees = currentMonthViolations.length;
-
-                      return (
-                        <>
-                          <div className="bg-white rounded p-3 text-center">
-                            <div className="text-2xl font-bold text-red-600">
-                              {Math.round(totalViolationHours * 10) / 10}시간
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              위반 총 시간
-                            </div>
-                          </div>
-                          <div className="bg-white rounded p-3 text-center">
-                            <div className="text-2xl font-bold text-orange-600">
-                              {totalWeeks}주
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              위반 기간
-                            </div>
-                          </div>
-                          <div className="bg-white rounded p-3 text-center">
-                            <div className="text-2xl font-bold text-purple-600">
-                              {totalEmployees}명
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              위반 직원
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <div className="h-40 mb-4 worklife-chart-container">
-                    <Bar
-                      key={`violations-chart-${selectedYear}-${Object.keys(workLifeYearData).length}`}
-                      data={{
-                        labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                        datasets: [{
-                          label: '위반 건수',
-                          data: workLifeData.violations,
-                          backgroundColor: workLifeData.violations.map((count) =>
-                            count === null ? 'rgba(200, 200, 200, 0.3)' : count === 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'
-                          ),
-                          borderColor: workLifeData.violations.map((count) =>
-                            count === null ? 'rgba(200, 200, 200, 0.5)' : count === 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
-                          ),
-                          borderWidth: 1,
-                        }],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            ticks: {
-                              stepSize: 1,
-                            },
-                          },
-                        },
-                        onClick: (event, elements) => {
-                          if (elements.length > 0) {
-                            const monthIndex = elements[0].index;
-                            if (workLifeData.violations[monthIndex] > 0) {
-                              setWorkLifeDetailMetric('주 52시간 위반');
-                              setWorkLifeDetailMonth(monthIndex);
-                              setShowWorkLifeDetailPopup(true);
-                            }
-                          }
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="overflow-x-auto mb-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-center">1월</th>
-                          <th className="p-2 text-center">2월</th>
-                          <th className="p-2 text-center">3월</th>
-                          <th className="p-2 text-center">4월</th>
-                          <th className="p-2 text-center">5월</th>
-                          <th className="p-2 text-center">6월</th>
-                          <th className="p-2 text-center">7월</th>
-                          <th className="p-2 text-center">8월</th>
-                          <th className="p-2 text-center">9월</th>
-                          <th className="p-2 text-center">10월</th>
-                          <th className="p-2 text-center">11월</th>
-                          <th className="p-2 text-center">12월</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {workLifeData.violations.map((count, index) => (
-                              <td
-                                key={index}
-                                className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
-                                  count === null
-                                    ? 'text-gray-400'
-                                    : count === 0
-                                    ? 'text-green-600'
-                                    : 'text-red-600'
-                                }`}
-                                onClick={() => {
-                                  if (count !== null && count > 0) {
-                                    setWorkLifeDetailMetric('주 52시간 위반');
-                                    setWorkLifeDetailMonth(index);
-                                    setShowWorkLifeDetailPopup(true);
-                                  }
-                                }}
-                                title={
-                                  count > 0
-                                    ? '클릭하여 위반 직원 상세 보기'
-                                    : ''
-                                }
-                              >
-                                {count === null ? '-' : `${count}건`}
-                              </td>
-                            ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {selectedViolationMonth !== null && (
-                    <div className="bg-white rounded p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">
-                          {selectedViolationMonth + 1}월 위반 직원 상세
-                          <button
-                            onClick={() => setSelectedViolationMonth(null)}
-                            className="ml-2 text-gray-500 hover:text-gray-700"
-                          >
-                            <X className="w-4 h-4 inline" />
-                          </button>
-                        </h4>
-                        <button
-                          onClick={() => {
-                            // 테스트용 알림 발송 (첫 번째 위반 직원 기준)
-                            const employees = getViolationDetails(
-                              selectedYear,
-                              selectedViolationMonth
-                            );
-                            if (employees.length > 0) {
-                              const employee = employees[0];
-                              send52HourViolationAlert(
-                                employee.name,
-                                employee.hours,
-                                'violation'
-                              );
-                              alert(
-                                `${employee.name}님에게 52시간 위반 알림을 발송했습니다.`
-                              );
-                            }
+                              },
+                            ],
                           }}
-                          className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                        >
-                          알림 테스트
-                        </button>
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false,
+                              },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                max: 70,
+                              },
+                            },
+                            onClick: (event, elements) => {
+                              if (elements.length > 0) {
+                                const monthIndex = elements[0].index;
+                                setWorkLifeDetailMetric('평균 특근시간');
+                                setWorkLifeDetailMonth(monthIndex);
+                                setShowWorkLifeDetailPopup(true);
+                              }
+                            },
+                          }}
+                        />
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="bg-gray-100">
-                              <th className="p-2 text-left w-20">직원명</th>
-                              <th className="p-2 text-left w-24">부서</th>
-                              <th className="p-2 text-left w-20">위반시간</th>
-                              <th className="p-2 text-left w-auto">위반주차</th>
+                            <tr className="bg-gray-200">
+                              <th className="p-2 text-center">1월</th>
+                              <th className="p-2 text-center">2월</th>
+                              <th className="p-2 text-center">3월</th>
+                              <th className="p-2 text-center">4월</th>
+                              <th className="p-2 text-center">5월</th>
+                              <th className="p-2 text-center">6월</th>
+                              <th className="p-2 text-center">7월</th>
+                              <th className="p-2 text-center">8월</th>
+                              <th className="p-2 text-center">9월</th>
+                              <th className="p-2 text-center">10월</th>
+                              <th className="p-2 text-center">11월</th>
+                              <th className="p-2 text-center">12월</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {getViolationDetails(
-                              selectedYear,
-                              selectedViolationMonth
-                            ).map((employee, index) => (
-                              <tr key={index} className="border-b">
-                                <td className="p-2 w-20">{employee.name}</td>
-                                <td className="p-2 w-24">{employee.dept}</td>
-                                <td className="p-2 w-20 text-red-600 font-semibold">
-                                  {employee.hours}시간
-                                </td>
-                                <td className="p-2 w-auto text-sm">
-                                  {employee.weeks}
-                                </td>
-                              </tr>
-                            ))}
-                            {getViolationDetails(
-                              selectedYear,
-                              selectedViolationMonth
-                            ).length === 0 && (
-                              <tr>
+                            <tr>
+                              {workLifeData.overtime.map((hours, index) => (
                                 <td
-                                  colSpan="4"
-                                  className="p-4 text-center text-gray-500"
+                                  key={index}
+                                  className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
+                                    hours === null
+                                      ? 'text-gray-400'
+                                      : hours <= 10
+                                      ? 'text-green-600'
+                                      : 'text-red-600'
+                                  }`}
+                                  onClick={() => {
+                                    if (hours !== null) {
+                                      setWorkLifeDetailMetric('평균 특근시간');
+                                      setWorkLifeDetailMonth(index);
+                                      setShowWorkLifeDetailPopup(true);
+                                    }
+                                  }}
                                 >
-                                  해당 월에 위반 직원이 없습니다.
+                                  {hours === null ? '-' : `${hours}시간`}
                                 </td>
-                              </tr>
-                            )}
+                              ))}
+                            </tr>
                           </tbody>
                         </table>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* 스트레스 지수 */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">스트레스 지수</h3>
-                    <span className="text-xs text-gray-500 px-2 py-1 rounded">
-                      기준: 근무시간+업무강도+휴식+만족도 가중평균 (50점 이하
-                      양호)
-                    </span>
-                  </div>
-                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 relative transition-all duration-300">
-                    <button
-                      onClick={() =>
-                        setIsStressCalculationExpanded(
-                          !isStressCalculationExpanded
-                        )
-                      }
-                      className="absolute top-2 right-2 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                      title={
-                        isStressCalculationExpanded
-                          ? '계산방법 접기'
-                          : '계산방법 펼치기'
-                      }
-                    >
-                      <span
-                        className={`inline-block transition-transform duration-200 ${
-                          isStressCalculationExpanded
-                            ? 'rotate-180'
-                            : 'rotate-0'
-                        }`}
-                      >
-                        {isStressCalculationExpanded ? '▲' : '▼'}
-                      </span>
-                      <span className="ml-1">
-                        {isStressCalculationExpanded ? '접기' : '펼치기'}
-                      </span>
-                    </button>
-                    <h4 className="font-semibold text-blue-800 mb-2 pr-16">
-                      스트레스 지수 계산 방법
-                    </h4>
-                    <div
-                      className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                        isStressCalculationExpanded
-                          ? 'max-h-64 opacity-100 mt-2'
-                          : 'max-h-0 opacity-0 mt-0'
-                      }`}
-                    >
-                      <div className="text-sm text-blue-700 space-y-1">
-                        <p>• 근무시간 초과: 주 52시간 초과 시 가중치 적용</p>
-                        <p>• 업무 강도: 프로젝트 데드라인, 회의 빈도 등 반영</p>
-                        <p>• 휴식시간: 연차 사용률, 휴게시간 준수율 반영</p>
-                        <p>• 직무 만족도: 정기 설문조사 결과 반영</p>
-                        <p>• 범위: 0-100점 (낮을수록 양호, 높을수록 위험)</p>
+                    {/* 연차 사용률 */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">연차 사용률</h3>
+                        <span className="text-xs text-gray-500 px-2 py-1 rounded">
+                          기준: 누적 사용일수 ÷ 연간 총 연차일수 (70% 이상 양호)
+                        </span>
+                      </div>
+                      <div className="h-40 mb-4 worklife-chart-container">
+                        <Bar
+                          key={`leaveusage-chart-${selectedYear}-${leaveRequests.length}`}
+                          data={(() => {
+                            const data =
+                              getWorkLifeBalanceDataByYear(selectedYear);
+                            return {
+                              labels: [
+                                '1월',
+                                '2월',
+                                '3월',
+                                '4월',
+                                '5월',
+                                '6월',
+                                '7월',
+                                '8월',
+                                '9월',
+                                '10월',
+                                '11월',
+                                '12월',
+                              ],
+                              datasets: [
+                                {
+                                  label: '연차 사용률(%)',
+                                  data: data.leaveUsage,
+                                  backgroundColor: data.leaveUsage.map((rate) =>
+                                    rate === null
+                                      ? 'rgba(200, 200, 200, 0.3)'
+                                      : rate >= 70
+                                      ? 'rgba(34, 197, 94, 0.8)'
+                                      : 'rgba(239, 68, 68, 0.8)'
+                                  ),
+                                  borderColor: data.leaveUsage.map((rate) =>
+                                    rate === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : rate >= 70
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
+                                  ),
+                                  borderWidth: 1,
+                                },
+                              ],
+                            };
+                          })()}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false,
+                              },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                max: 100,
+                              },
+                            },
+                            onClick: (event, elements) => {
+                              if (elements.length > 0) {
+                                const monthIndex = elements[0].index;
+                                setWorkLifeDetailMetric('연차 사용률');
+                                setWorkLifeDetailMonth(monthIndex);
+                                setShowWorkLifeDetailPopup(true);
+                              }
+                            },
+                          }}
+                        />
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-200">
+                              <th className="p-2 text-center">1월</th>
+                              <th className="p-2 text-center">2월</th>
+                              <th className="p-2 text-center">3월</th>
+                              <th className="p-2 text-center">4월</th>
+                              <th className="p-2 text-center">5월</th>
+                              <th className="p-2 text-center">6월</th>
+                              <th className="p-2 text-center">7월</th>
+                              <th className="p-2 text-center">8월</th>
+                              <th className="p-2 text-center">9월</th>
+                              <th className="p-2 text-center">10월</th>
+                              <th className="p-2 text-center">11월</th>
+                              <th className="p-2 text-center">12월</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              {(() => {
+                                const data =
+                                  getWorkLifeBalanceDataByYear(selectedYear);
+                                return data.leaveUsage.map((rate, index) => (
+                                  <td
+                                    key={index}
+                                    className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
+                                      rate === null
+                                        ? 'text-gray-400'
+                                        : rate >= 70
+                                        ? 'text-green-600'
+                                        : 'text-red-600'
+                                    }`}
+                                    onClick={() => {
+                                      if (rate !== null) {
+                                        setWorkLifeDetailMetric('연차 사용률');
+                                        setWorkLifeDetailMonth(index);
+                                        setShowWorkLifeDetailPopup(true);
+                                      }
+                                    }}
+                                  >
+                                    {rate === null ? '-' : `${rate}%`}
+                                  </td>
+                                ));
+                              })()}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 주 52시간 위반 */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">
+                          {selectedYear}-
+                          {String(new Date().getMonth() + 1).padStart(2, '0')}{' '}
+                          주 52시간 위반
+                        </h3>
+                        <span className="text-xs text-gray-500 px-2 py-1 rounded">
+                          기준: 주간 총 근무시간 52시간 초과 직원 수 (0건 양호)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        {(() => {
+                          const currentMonthViolations = getViolationDetails(
+                            selectedYear,
+                            new Date().getMonth()
+                          );
+
+                          // 위반 총 시간 계산
+                          const totalViolationHours =
+                            currentMonthViolations.reduce(
+                              (sum, v) => sum + (parseFloat(v.hours) || 0),
+                              0
+                            );
+
+                          // 위반 기간 (주 수) 계산
+                          const weeksSet = new Set();
+                          currentMonthViolations.forEach((v) => {
+                            if (v.weeks) {
+                              // "8/4 ~ 8/10, 8/11 ~ 8/17" 형식을 파싱
+                              const weekParts = v.weeks
+                                .split(',')
+                                .map((w) => w.trim());
+                              weekParts.forEach((w) => weeksSet.add(w));
+                            }
+                          });
+                          const totalWeeks = weeksSet.size;
+
+                          // 위반 직원 수
+                          const totalEmployees = currentMonthViolations.length;
+
+                          return (
+                            <>
+                              <div className="bg-white rounded p-3 text-center">
+                                <div className="text-2xl font-bold text-red-600">
+                                  {Math.round(totalViolationHours * 10) / 10}
+                                  시간
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  위반 총 시간
+                                </div>
+                              </div>
+                              <div className="bg-white rounded p-3 text-center">
+                                <div className="text-2xl font-bold text-orange-600">
+                                  {totalWeeks}주
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  위반 기간
+                                </div>
+                              </div>
+                              <div className="bg-white rounded p-3 text-center">
+                                <div className="text-2xl font-bold text-purple-600">
+                                  {totalEmployees}명
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  위반 직원
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <div className="h-40 mb-4 worklife-chart-container">
+                        <Bar
+                          key={`violations-chart-${selectedYear}-${
+                            Object.keys(workLifeYearData).length
+                          }`}
+                          data={{
+                            labels: [
+                              '1월',
+                              '2월',
+                              '3월',
+                              '4월',
+                              '5월',
+                              '6월',
+                              '7월',
+                              '8월',
+                              '9월',
+                              '10월',
+                              '11월',
+                              '12월',
+                            ],
+                            datasets: [
+                              {
+                                label: '위반 건수',
+                                data: workLifeData.violations,
+                                backgroundColor: workLifeData.violations.map(
+                                  (count) =>
+                                    count === null
+                                      ? 'rgba(200, 200, 200, 0.3)'
+                                      : count === 0
+                                      ? 'rgba(34, 197, 94, 0.8)'
+                                      : 'rgba(239, 68, 68, 0.8)'
+                                ),
+                                borderColor: workLifeData.violations.map(
+                                  (count) =>
+                                    count === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : count === 0
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
+                                ),
+                                borderWidth: 1,
+                              },
+                            ],
+                          }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false,
+                              },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                ticks: {
+                                  stepSize: 1,
+                                },
+                              },
+                            },
+                            onClick: (event, elements) => {
+                              if (elements.length > 0) {
+                                const monthIndex = elements[0].index;
+                                if (workLifeData.violations[monthIndex] > 0) {
+                                  setWorkLifeDetailMetric('주 52시간 위반');
+                                  setWorkLifeDetailMonth(monthIndex);
+                                  setShowWorkLifeDetailPopup(true);
+                                }
+                              }
+                            },
+                          }}
+                        />
+                      </div>
+                      <div className="overflow-x-auto mb-4">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-200">
+                              <th className="p-2 text-center">1월</th>
+                              <th className="p-2 text-center">2월</th>
+                              <th className="p-2 text-center">3월</th>
+                              <th className="p-2 text-center">4월</th>
+                              <th className="p-2 text-center">5월</th>
+                              <th className="p-2 text-center">6월</th>
+                              <th className="p-2 text-center">7월</th>
+                              <th className="p-2 text-center">8월</th>
+                              <th className="p-2 text-center">9월</th>
+                              <th className="p-2 text-center">10월</th>
+                              <th className="p-2 text-center">11월</th>
+                              <th className="p-2 text-center">12월</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              {workLifeData.violations.map((count, index) => (
+                                <td
+                                  key={index}
+                                  className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
+                                    count === null
+                                      ? 'text-gray-400'
+                                      : count === 0
+                                      ? 'text-green-600'
+                                      : 'text-red-600'
+                                  }`}
+                                  onClick={() => {
+                                    if (count !== null && count > 0) {
+                                      setWorkLifeDetailMetric('주 52시간 위반');
+                                      setWorkLifeDetailMonth(index);
+                                      setShowWorkLifeDetailPopup(true);
+                                    }
+                                  }}
+                                  title={
+                                    count > 0
+                                      ? '클릭하여 위반 직원 상세 보기'
+                                      : ''
+                                  }
+                                >
+                                  {count === null ? '-' : `${count}건`}
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {selectedViolationMonth !== null && (
+                        <div className="bg-white rounded p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold">
+                              {selectedViolationMonth + 1}월 위반 직원 상세
+                              <button
+                                onClick={() => setSelectedViolationMonth(null)}
+                                className="ml-2 text-gray-500 hover:text-gray-700"
+                              >
+                                <X className="w-4 h-4 inline" />
+                              </button>
+                            </h4>
+                            <button
+                              onClick={() => {
+                                // 테스트용 알림 발송 (첫 번째 위반 직원 기준)
+                                const employees = getViolationDetails(
+                                  selectedYear,
+                                  selectedViolationMonth
+                                );
+                                if (employees.length > 0) {
+                                  const employee = employees[0];
+                                  send52HourViolationAlert(
+                                    employee.name,
+                                    employee.hours,
+                                    'violation'
+                                  );
+                                  alert(
+                                    `${employee.name}님에게 52시간 위반 알림을 발송했습니다.`
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                            >
+                              알림 테스트
+                            </button>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="p-2 text-left w-20">직원명</th>
+                                  <th className="p-2 text-left w-24">부서</th>
+                                  <th className="p-2 text-left w-20">
+                                    위반시간
+                                  </th>
+                                  <th className="p-2 text-left w-auto">
+                                    위반주차
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {getViolationDetails(
+                                  selectedYear,
+                                  selectedViolationMonth
+                                ).map((employee, index) => (
+                                  <tr key={index} className="border-b">
+                                    <td className="p-2 w-20">
+                                      {employee.name}
+                                    </td>
+                                    <td className="p-2 w-24">
+                                      {employee.dept}
+                                    </td>
+                                    <td className="p-2 w-20 text-red-600 font-semibold">
+                                      {employee.hours}시간
+                                    </td>
+                                    <td className="p-2 w-auto text-sm">
+                                      {employee.weeks}
+                                    </td>
+                                  </tr>
+                                ))}
+                                {getViolationDetails(
+                                  selectedYear,
+                                  selectedViolationMonth
+                                ).length === 0 && (
+                                  <tr>
+                                    <td
+                                      colSpan="4"
+                                      className="p-4 text-center text-gray-500"
+                                    >
+                                      해당 월에 위반 직원이 없습니다.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 스트레스 지수 */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">스트레스 지수</h3>
+                        <span className="text-xs text-gray-500 px-2 py-1 rounded">
+                          기준: 근무시간+업무강도+휴식+만족도 가중평균 (50점
+                          이하 양호)
+                        </span>
+                      </div>
+                      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 relative transition-all duration-300">
+                        <button
+                          onClick={() =>
+                            setIsStressCalculationExpanded(
+                              !isStressCalculationExpanded
+                            )
+                          }
+                          className="absolute top-2 right-2 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                          title={
+                            isStressCalculationExpanded
+                              ? '계산방법 접기'
+                              : '계산방법 펼치기'
+                          }
+                        >
+                          <span
+                            className={`inline-block transition-transform duration-200 ${
+                              isStressCalculationExpanded
+                                ? 'rotate-180'
+                                : 'rotate-0'
+                            }`}
+                          >
+                            {isStressCalculationExpanded ? '▲' : '▼'}
+                          </span>
+                          <span className="ml-1">
+                            {isStressCalculationExpanded ? '접기' : '펼치기'}
+                          </span>
+                        </button>
+                        <h4 className="font-semibold text-blue-800 mb-2 pr-16">
+                          스트레스 지수 계산 방법
+                        </h4>
+                        <div
+                          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                            isStressCalculationExpanded
+                              ? 'max-h-64 opacity-100 mt-2'
+                              : 'max-h-0 opacity-0 mt-0'
+                          }`}
+                        >
+                          <div className="text-sm text-blue-700 space-y-1">
+                            <p>
+                              • 근무시간 초과: 주 52시간 초과 시 가중치 적용
+                            </p>
+                            <p>
+                              • 업무 강도: 프로젝트 데드라인, 회의 빈도 등 반영
+                            </p>
+                            <p>• 휴식시간: 연차 사용률, 휴게시간 준수율 반영</p>
+                            <p>• 직무 만족도: 정기 설문조사 결과 반영</p>
+                            <p>
+                              • 범위: 0-100점 (낮을수록 양호, 높을수록 위험)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-40 mb-4 worklife-chart-container">
+                        <Line
+                          key={`stress-chart-${selectedYear}-${
+                            Object.keys(workLifeYearData).length
+                          }`}
+                          data={{
+                            labels: [
+                              '1월',
+                              '2월',
+                              '3월',
+                              '4월',
+                              '5월',
+                              '6월',
+                              '7월',
+                              '8월',
+                              '9월',
+                              '10월',
+                              '11월',
+                              '12월',
+                            ],
+                            datasets: [
+                              {
+                                label: '스트레스 지수',
+                                data: workLifeData.stressIndex,
+                                borderColor: 'rgba(175, 119, 228, 1)',
+                                backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                                pointBackgroundColor:
+                                  workLifeData.stressIndex.map((stress) =>
+                                    stress === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : stress <= 50
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
+                                  ),
+                                pointBorderColor: workLifeData.stressIndex.map(
+                                  (stress) =>
+                                    stress === null
+                                      ? 'rgba(200, 200, 200, 0.5)'
+                                      : stress <= 50
+                                      ? 'rgba(34, 197, 94, 1)'
+                                      : 'rgba(239, 68, 68, 1)'
+                                ),
+                                pointRadius: 6,
+                                tension: 0.1,
+                                fill: true,
+                              },
+                            ],
+                          }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false,
+                              },
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                max: 100,
+                              },
+                            },
+                            onClick: (event, elements) => {
+                              if (elements.length > 0) {
+                                const monthIndex = elements[0].index;
+                                setWorkLifeDetailMetric('스트레스 지수');
+                                setWorkLifeDetailMonth(monthIndex);
+                                setShowWorkLifeDetailPopup(true);
+                              }
+                            },
+                          }}
+                        />
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-200">
+                              <th className="p-2 text-center">1월</th>
+                              <th className="p-2 text-center">2월</th>
+                              <th className="p-2 text-center">3월</th>
+                              <th className="p-2 text-center">4월</th>
+                              <th className="p-2 text-center">5월</th>
+                              <th className="p-2 text-center">6월</th>
+                              <th className="p-2 text-center">7월</th>
+                              <th className="p-2 text-center">8월</th>
+                              <th className="p-2 text-center">9월</th>
+                              <th className="p-2 text-center">10월</th>
+                              <th className="p-2 text-center">11월</th>
+                              <th className="p-2 text-center">12월</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              {workLifeData.stressIndex.map((score, index) => (
+                                <td
+                                  key={index}
+                                  className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
+                                    score === null
+                                      ? 'text-gray-400'
+                                      : score <= 50
+                                      ? 'text-green-600'
+                                      : 'text-red-600'
+                                  }`}
+                                  onClick={() => {
+                                    if (score !== null) {
+                                      setWorkLifeDetailMetric('스트레스 지수');
+                                      setWorkLifeDetailMonth(index);
+                                      setShowWorkLifeDetailPopup(true);
+                                    }
+                                  }}
+                                >
+                                  {score === null ? '-' : `${score}점`}
+                                </td>
+                              ))}
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
-                  <div className="h-40 mb-4 worklife-chart-container">
-                    <Line
-                      key={`stress-chart-${selectedYear}-${Object.keys(workLifeYearData).length}`}
-                      data={{
-                        labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-                        datasets: [{
-                          label: '스트레스 지수',
-                          data: workLifeData.stressIndex,
-                          borderColor: 'rgba(175, 119, 228, 1)',
-                          backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                          pointBackgroundColor: workLifeData.stressIndex.map((stress) =>
-                            stress === null ? 'rgba(200, 200, 200, 0.5)' : stress <= 50 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
-                          ),
-                          pointBorderColor: workLifeData.stressIndex.map((stress) =>
-                            stress === null ? 'rgba(200, 200, 200, 0.5)' : stress <= 50 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)'
-                          ),
-                          pointRadius: 6,
-                          tension: 0.1,
-                          fill: true,
-                        }],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 100,
-                          },
-                        },
-                        onClick: (event, elements) => {
-                          if (elements.length > 0) {
-                            const monthIndex = elements[0].index;
-                            setWorkLifeDetailMetric('스트레스 지수');
-                            setWorkLifeDetailMonth(monthIndex);
-                            setShowWorkLifeDetailPopup(true);
-                          }
-                        },
-                      }}
-                    />
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-center">1월</th>
-                          <th className="p-2 text-center">2월</th>
-                          <th className="p-2 text-center">3월</th>
-                          <th className="p-2 text-center">4월</th>
-                          <th className="p-2 text-center">5월</th>
-                          <th className="p-2 text-center">6월</th>
-                          <th className="p-2 text-center">7월</th>
-                          <th className="p-2 text-center">8월</th>
-                          <th className="p-2 text-center">9월</th>
-                          <th className="p-2 text-center">10월</th>
-                          <th className="p-2 text-center">11월</th>
-                          <th className="p-2 text-center">12월</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          {workLifeData.stressIndex.map((score, index) => (
-                              <td
-                                key={index}
-                                className={`p-2 text-center font-semibold cursor-pointer hover:bg-blue-50 ${
-                                  score === null
-                                    ? 'text-gray-400'
-                                    : score <= 50
-                                    ? 'text-green-600'
-                                    : 'text-red-600'
-                                }`}
-                                onClick={() => {
-                                  if (score !== null) {
-                                    setWorkLifeDetailMetric('스트레스 지수');
-                                    setWorkLifeDetailMonth(index);
-                                    setShowWorkLifeDetailPopup(true);
-                                  }
-                                }}
-                              >
-                                {score === null ? '-' : `${score}점`}
-                              </td>
-                            ))}
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
                 );
               })()}
             </div>
@@ -2394,821 +2522,867 @@ const AdminDashboard = ({
             <div className="flex-1 overflow-y-auto p-6">
               {(() => {
                 // workLifeYearData에서 해당 월 데이터를 가져와서 커스텀 getAttendanceForEmployee 생성
-                const monthData = workLifeYearData[workLifeDetailMonth + 1] || [];
+                const monthData =
+                  workLifeYearData[workLifeDetailMonth + 1] || [];
 
-                const detailPopupGetAttendanceForEmployee = (employeeId, year, month, day) => {
-                  const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const detailPopupGetAttendanceForEmployee = (
+                  employeeId,
+                  year,
+                  month,
+                  day
+                ) => {
+                  const dateKey = `${year}-${String(month).padStart(
+                    2,
+                    '0'
+                  )}-${String(day).padStart(2, '0')}`;
                   const record = monthData.find(
-                    (r) => r.employeeId === employeeId && r.date.startsWith(dateKey)
+                    (r) =>
+                      r.employeeId === employeeId && r.date.startsWith(dateKey)
                   );
-                  return record ? { checkIn: record.checkIn || '', checkOut: record.checkOut || '' } : { checkIn: '', checkOut: '' };
+                  return record
+                    ? {
+                        checkIn: record.checkIn || '',
+                        checkOut: record.checkOut || '',
+                      }
+                    : { checkIn: '', checkOut: '' };
                 };
 
                 return (
                   <>
-              {workLifeDetailMetric === '평균 특근시간' && (
-                <div>
-                  <div className="mb-4 text-sm text-gray-600">
-                    {selectedYear}년 {workLifeDetailMonth + 1}월 직원별 특근 총
-                    시간입니다.
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-3 text-center font-semibold">
-                            급여형태
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: 'employeeName',
-                                direction:
-                                  overtimeSortConfig.key === 'employeeName' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            직원명{' '}
-                            {overtimeSortConfig.key === 'employeeName' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: 'value',
-                                direction:
-                                  overtimeSortConfig.key === 'value' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            특근 총 시간{' '}
-                            {overtimeSortConfig.key === 'value' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '조출',
-                                direction:
-                                  overtimeSortConfig.key === '조출' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            조출{' '}
-                            {overtimeSortConfig.key === '조출' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '연장',
-                                direction:
-                                  overtimeSortConfig.key === '연장' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            연장{' '}
-                            {overtimeSortConfig.key === '연장' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '특근',
-                                direction:
-                                  overtimeSortConfig.key === '특근' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            특근{' '}
-                            {overtimeSortConfig.key === '특근' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '심야',
-                                direction:
-                                  overtimeSortConfig.key === '심야' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            심야{' '}
-                            {overtimeSortConfig.key === '심야' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '연장+심야',
-                                direction:
-                                  overtimeSortConfig.key === '연장+심야' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            연장+심야{' '}
-                            {overtimeSortConfig.key === '연장+심야' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '조출+특근',
-                                direction:
-                                  overtimeSortConfig.key === '조출+특근' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            조출+특근{' '}
-                            {overtimeSortConfig.key === '조출+특근' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setOvertimeSortConfig({
-                                key: '특근+연장',
-                                direction:
-                                  overtimeSortConfig.key === '특근+연장' &&
-                                  overtimeSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            특근+연장{' '}
-                            {overtimeSortConfig.key === '특근+연장' && (
-                              <span>
-                                {overtimeSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
-                          const detailData = getWorkLifeDetailDataUtil(
-                            selectedYear,
-                            workLifeDetailMonth,
-                            '평균 특근시간',
-                            employees,
-                            getDaysInMonth,
-                            detailPopupGetAttendanceForEmployee,
-                            isHolidayDate,
-                            leaveRequests,
-                            calcDailyWage,
-                            calculateAnnualLeave,
-                            safetyAccidents,
-                            suggestions,
-                            evaluations,
-                            notices
-                          );
-                          if (detailData.length === 0) {
-                            return (
-                              <tr>
-                                <td
-                                  colSpan="10"
-                                  className="p-4 text-center text-gray-500"
+                    {workLifeDetailMetric === '평균 특근시간' && (
+                      <div>
+                        <div className="mb-4 text-sm text-gray-600">
+                          {selectedYear}년 {workLifeDetailMonth + 1}월 직원별
+                          특근 총 시간입니다.
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                <th className="p-3 text-center font-semibold">
+                                  급여형태
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: 'employeeName',
+                                      direction:
+                                        overtimeSortConfig.key ===
+                                          'employeeName' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
                                 >
-                                  해당 월에 특근 기록이 없습니다.
-                                </td>
+                                  직원명{' '}
+                                  {overtimeSortConfig.key ===
+                                    'employeeName' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: 'value',
+                                      direction:
+                                        overtimeSortConfig.key === 'value' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  특근 총 시간{' '}
+                                  {overtimeSortConfig.key === 'value' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '조출',
+                                      direction:
+                                        overtimeSortConfig.key === '조출' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  조출{' '}
+                                  {overtimeSortConfig.key === '조출' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '연장',
+                                      direction:
+                                        overtimeSortConfig.key === '연장' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  연장{' '}
+                                  {overtimeSortConfig.key === '연장' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '특근',
+                                      direction:
+                                        overtimeSortConfig.key === '특근' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  특근{' '}
+                                  {overtimeSortConfig.key === '특근' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '심야',
+                                      direction:
+                                        overtimeSortConfig.key === '심야' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  심야{' '}
+                                  {overtimeSortConfig.key === '심야' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '연장+심야',
+                                      direction:
+                                        overtimeSortConfig.key ===
+                                          '연장+심야' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  연장+심야{' '}
+                                  {overtimeSortConfig.key === '연장+심야' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '조출+특근',
+                                      direction:
+                                        overtimeSortConfig.key ===
+                                          '조출+특근' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  조출+특근{' '}
+                                  {overtimeSortConfig.key === '조출+특근' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setOvertimeSortConfig({
+                                      key: '특근+연장',
+                                      direction:
+                                        overtimeSortConfig.key ===
+                                          '특근+연장' &&
+                                        overtimeSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  특근+연장{' '}
+                                  {overtimeSortConfig.key === '특근+연장' && (
+                                    <span>
+                                      {overtimeSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
                               </tr>
-                            );
-                          }
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
+                                const detailData = getWorkLifeDetailDataUtil(
+                                  selectedYear,
+                                  workLifeDetailMonth,
+                                  '평균 특근시간',
+                                  employees,
+                                  getDaysInMonth,
+                                  detailPopupGetAttendanceForEmployee,
+                                  isHolidayDate,
+                                  leaveRequests,
+                                  calcDailyWage,
+                                  calculateAnnualLeave,
+                                  safetyAccidents,
+                                  suggestions,
+                                  evaluations,
+                                  notices
+                                );
+                                if (detailData.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td
+                                        colSpan="10"
+                                        className="p-4 text-center text-gray-500"
+                                      >
+                                        해당 월에 특근 기록이 없습니다.
+                                      </td>
+                                    </tr>
+                                  );
+                                }
 
-                          // 정렬 로직 적용
-                          const sortedData = [...detailData].sort((a, b) => {
-                            if (!overtimeSortConfig.key) return 0;
+                                // 정렬 로직 적용
+                                const sortedData = [...detailData].sort(
+                                  (a, b) => {
+                                    if (!overtimeSortConfig.key) return 0;
 
-                            const aValue = a[overtimeSortConfig.key];
-                            const bValue = b[overtimeSortConfig.key];
+                                    const aValue = a[overtimeSortConfig.key];
+                                    const bValue = b[overtimeSortConfig.key];
 
-                            if (overtimeSortConfig.key === 'employeeName') {
-                              // 문자열 정렬
-                              return overtimeSortConfig.direction === 'asc'
-                                ? aValue.localeCompare(bValue)
-                                : bValue.localeCompare(aValue);
-                            } else {
-                              // 숫자 정렬
-                              return overtimeSortConfig.direction === 'asc'
-                                ? aValue - bValue
-                                : bValue - aValue;
-                            }
-                          });
+                                    if (
+                                      overtimeSortConfig.key === 'employeeName'
+                                    ) {
+                                      // 문자열 정렬
+                                      return overtimeSortConfig.direction ===
+                                        'asc'
+                                        ? aValue.localeCompare(bValue)
+                                        : bValue.localeCompare(aValue);
+                                    } else {
+                                      // 숫자 정렬
+                                      return overtimeSortConfig.direction ===
+                                        'asc'
+                                        ? aValue - bValue
+                                        : bValue - aValue;
+                                    }
+                                  }
+                                );
 
-                          return sortedData.map((item, index) => (
-                            <tr
-                              key={index}
-                              className="border-b hover:bg-gray-50"
-                            >
-                              <td className="p-3 text-center">
-                                {item.payType}
-                              </td>
-                              <td className="p-3 text-center">
-                                {item.employeeName}
-                              </td>
-                              <td className="p-3 text-center font-semibold text-blue-600">
-                                {item.value}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.조출}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.연장}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.특근}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.심야}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item['연장+심야']}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item['조출+특근']}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item['특근+연장']}
-                              </td>
-                            </tr>
-                          ));
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                                return sortedData.map((item, index) => (
+                                  <tr
+                                    key={index}
+                                    className="border-b hover:bg-gray-50"
+                                  >
+                                    <td className="p-3 text-center">
+                                      {item.payType}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      {item.employeeName}
+                                    </td>
+                                    <td className="p-3 text-center font-semibold text-blue-600">
+                                      {item.value}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.조출}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.연장}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.특근}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.심야}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item['연장+심야']}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item['조출+특근']}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item['특근+연장']}
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
 
-              {workLifeDetailMetric === '연차 사용률' && (
-                <div>
-                  <div className="mb-4 text-sm text-gray-600">
-                    {selectedYear}년 {workLifeDetailMonth + 1}월 직원별 연차
-                    사용일입니다.
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setLeaveSortConfig({
-                                key: 'employeeName',
-                                direction:
-                                  leaveSortConfig.key === 'employeeName' &&
-                                  leaveSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            직원명{' '}
-                            {leaveSortConfig.key === 'employeeName' && (
-                              <span>
-                                {leaveSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setLeaveSortConfig({
-                                key: 'date',
-                                direction:
-                                  leaveSortConfig.key === 'date' &&
-                                  leaveSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            사용일자{' '}
-                            {leaveSortConfig.key === 'date' && (
-                              <span>
-                                {leaveSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setLeaveSortConfig({
-                                key: 'value',
-                                direction:
-                                  leaveSortConfig.key === 'value' &&
-                                  leaveSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            연차 사용일{' '}
-                            {leaveSortConfig.key === 'value' && (
-                              <span>
-                                {leaveSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setLeaveSortConfig({
-                                key: 'leaveType',
-                                direction:
-                                  leaveSortConfig.key === 'leaveType' &&
-                                  leaveSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            연차유형{' '}
-                            {leaveSortConfig.key === 'leaveType' && (
-                              <span>
-                                {leaveSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
-                          let detailData = getWorkLifeDetailDataUtil(
-                            selectedYear,
-                            workLifeDetailMonth,
-                            '연차 사용률',
-                            employees,
-                            getDaysInMonth,
-                            detailPopupGetAttendanceForEmployee,
-                            isHolidayDate,
-                            leaveRequests,
-                            calcDailyWage,
-                            calculateAnnualLeave,
-                            safetyAccidents,
-                            suggestions,
-                            evaluations,
-                            notices
-                          );
-
-                          // Apply sorting
-                          if (leaveSortConfig.key) {
-                            detailData = [...detailData].sort((a, b) => {
-                              let aVal = a[leaveSortConfig.key];
-                              let bVal = b[leaveSortConfig.key];
-
-                              // Handle numeric comparison for value field
-                              if (leaveSortConfig.key === 'value') {
-                                aVal = Number(aVal);
-                                bVal = Number(bVal);
-                                return leaveSortConfig.direction === 'asc'
-                                  ? aVal - bVal
-                                  : bVal - aVal;
-                              }
-
-                              // String comparison for other fields
-                              if (leaveSortConfig.direction === 'asc') {
-                                return String(aVal).localeCompare(String(bVal));
-                              } else {
-                                return String(bVal).localeCompare(String(aVal));
-                              }
-                            });
-                          }
-
-                          if (detailData.length === 0) {
-                            return (
-                              <tr>
-                                <td
-                                  colSpan="4"
-                                  className="p-4 text-center text-gray-500"
+                    {workLifeDetailMetric === '연차 사용률' && (
+                      <div>
+                        <div className="mb-4 text-sm text-gray-600">
+                          {selectedYear}년 {workLifeDetailMonth + 1}월 직원별
+                          연차 사용일입니다.
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setLeaveSortConfig({
+                                      key: 'employeeName',
+                                      direction:
+                                        leaveSortConfig.key ===
+                                          'employeeName' &&
+                                        leaveSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
                                 >
-                                  해당 월에 연차 사용 기록이 없습니다.
-                                </td>
+                                  직원명{' '}
+                                  {leaveSortConfig.key === 'employeeName' && (
+                                    <span>
+                                      {leaveSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setLeaveSortConfig({
+                                      key: 'date',
+                                      direction:
+                                        leaveSortConfig.key === 'date' &&
+                                        leaveSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  사용일자{' '}
+                                  {leaveSortConfig.key === 'date' && (
+                                    <span>
+                                      {leaveSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setLeaveSortConfig({
+                                      key: 'value',
+                                      direction:
+                                        leaveSortConfig.key === 'value' &&
+                                        leaveSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  연차 사용일{' '}
+                                  {leaveSortConfig.key === 'value' && (
+                                    <span>
+                                      {leaveSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setLeaveSortConfig({
+                                      key: 'leaveType',
+                                      direction:
+                                        leaveSortConfig.key === 'leaveType' &&
+                                        leaveSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  연차유형{' '}
+                                  {leaveSortConfig.key === 'leaveType' && (
+                                    <span>
+                                      {leaveSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
                               </tr>
-                            );
-                          }
-                          const totalDays = detailData.reduce(
-                            (sum, item) => sum + item.value,
-                            0
-                          );
-                          return (
-                            <>
-                              {detailData.map((item, index) => (
-                                <tr
-                                  key={index}
-                                  className="border-b hover:bg-gray-50"
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
+                                let detailData = getWorkLifeDetailDataUtil(
+                                  selectedYear,
+                                  workLifeDetailMonth,
+                                  '연차 사용률',
+                                  employees,
+                                  getDaysInMonth,
+                                  detailPopupGetAttendanceForEmployee,
+                                  isHolidayDate,
+                                  leaveRequests,
+                                  calcDailyWage,
+                                  calculateAnnualLeave,
+                                  safetyAccidents,
+                                  suggestions,
+                                  evaluations,
+                                  notices
+                                );
+
+                                // Apply sorting
+                                if (leaveSortConfig.key) {
+                                  detailData = [...detailData].sort((a, b) => {
+                                    let aVal = a[leaveSortConfig.key];
+                                    let bVal = b[leaveSortConfig.key];
+
+                                    // Handle numeric comparison for value field
+                                    if (leaveSortConfig.key === 'value') {
+                                      aVal = Number(aVal);
+                                      bVal = Number(bVal);
+                                      return leaveSortConfig.direction === 'asc'
+                                        ? aVal - bVal
+                                        : bVal - aVal;
+                                    }
+
+                                    // String comparison for other fields
+                                    if (leaveSortConfig.direction === 'asc') {
+                                      return String(aVal).localeCompare(
+                                        String(bVal)
+                                      );
+                                    } else {
+                                      return String(bVal).localeCompare(
+                                        String(aVal)
+                                      );
+                                    }
+                                  });
+                                }
+
+                                if (detailData.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td
+                                        colSpan="4"
+                                        className="p-4 text-center text-gray-500"
+                                      >
+                                        해당 월에 연차 사용 기록이 없습니다.
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                const totalDays = detailData.reduce(
+                                  (sum, item) => sum + item.value,
+                                  0
+                                );
+                                return (
+                                  <>
+                                    {detailData.map((item, index) => (
+                                      <tr
+                                        key={index}
+                                        className="border-b hover:bg-gray-50"
+                                      >
+                                        <td className="p-3 text-center">
+                                          {item.employeeName}
+                                        </td>
+                                        <td className="p-3 text-center text-gray-700">
+                                          {item.date}
+                                        </td>
+                                        <td className="p-3 text-center font-semibold text-green-600">
+                                          {item.value}일
+                                        </td>
+                                        <td className="p-3 text-center text-gray-700">
+                                          {item.leaveType}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                    <tr className="bg-blue-50 font-bold">
+                                      <td
+                                        colSpan="3"
+                                        className="p-3 text-center text-gray-800"
+                                      >
+                                        총 합계
+                                      </td>
+                                      <td className="p-3 text-center text-blue-600">
+                                        {totalDays}일
+                                      </td>
+                                    </tr>
+                                  </>
+                                );
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {workLifeDetailMetric === '주 52시간 위반' && (
+                      <div>
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                            {selectedYear}-
+                            {String(workLifeDetailMonth + 1).padStart(2, '0')}{' '}
+                            주 52시간 위반
+                          </h3>
+                          <div className="text-sm text-gray-600">
+                            {selectedYear}년 {workLifeDetailMonth + 1}월 주
+                            52시간 위반 직원 목록입니다.
+                            <br />
+                            <span className="text-xs text-gray-500">
+                              * 동일 직원이라도 주차가 다르면 별도 행으로
+                              표시됩니다.
+                            </span>
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setViolationSortConfig({
+                                      key: 'employeeName',
+                                      direction:
+                                        violationSortConfig.key ===
+                                          'employeeName' &&
+                                        violationSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
                                 >
-                                  <td className="p-3 text-center">
-                                    {item.employeeName}
-                                  </td>
-                                  <td className="p-3 text-center text-gray-700">
-                                    {item.date}
-                                  </td>
-                                  <td className="p-3 text-center font-semibold text-green-600">
-                                    {item.value}일
-                                  </td>
-                                  <td className="p-3 text-center text-gray-700">
-                                    {item.leaveType}
-                                  </td>
-                                </tr>
-                              ))}
-                              <tr className="bg-blue-50 font-bold">
-                                <td
-                                  colSpan="3"
-                                  className="p-3 text-center text-gray-800"
+                                  직원명{' '}
+                                  {violationSortConfig.key ===
+                                    'employeeName' && (
+                                    <span>
+                                      {violationSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setViolationSortConfig({
+                                      key: 'weekPeriod',
+                                      direction:
+                                        violationSortConfig.key ===
+                                          'weekPeriod' &&
+                                        violationSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
                                 >
-                                  총 합계
-                                </td>
-                                <td className="p-3 text-center text-blue-600">
-                                  {totalDays}일
-                                </td>
+                                  해당 주 기간{' '}
+                                  {violationSortConfig.key === 'weekPeriod' && (
+                                    <span>
+                                      {violationSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
+                                <th
+                                  className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
+                                  onClick={() => {
+                                    setViolationSortConfig({
+                                      key: 'violationHours',
+                                      direction:
+                                        violationSortConfig.key ===
+                                          'violationHours' &&
+                                        violationSortConfig.direction === 'asc'
+                                          ? 'desc'
+                                          : 'asc',
+                                    });
+                                  }}
+                                >
+                                  위반 시간{' '}
+                                  {violationSortConfig.key ===
+                                    'violationHours' && (
+                                    <span>
+                                      {violationSortConfig.direction === 'asc'
+                                        ? '▲'
+                                        : '▼'}
+                                    </span>
+                                  )}
+                                </th>
                               </tr>
-                            </>
-                          );
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
+                                let detailData = getWorkLifeDetailDataUtil(
+                                  selectedYear,
+                                  workLifeDetailMonth,
+                                  '주 52시간 위반',
+                                  employees,
+                                  getDaysInMonth,
+                                  detailPopupGetAttendanceForEmployee,
+                                  isHolidayDate,
+                                  leaveRequests,
+                                  calcDailyWage,
+                                  calculateAnnualLeave,
+                                  safetyAccidents,
+                                  suggestions,
+                                  evaluations,
+                                  notices
+                                );
 
-              {workLifeDetailMetric === '주 52시간 위반' && (
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {selectedYear}-
-                      {String(workLifeDetailMonth + 1).padStart(2, '0')} 주
-                      52시간 위반
-                    </h3>
-                    <div className="text-sm text-gray-600">
-                      {selectedYear}년 {workLifeDetailMonth + 1}월 주 52시간
-                      위반 직원 목록입니다.
-                      <br />
-                      <span className="text-xs text-gray-500">
-                        * 동일 직원이라도 주차가 다르면 별도 행으로 표시됩니다.
-                      </span>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setViolationSortConfig({
-                                key: 'employeeName',
-                                direction:
-                                  violationSortConfig.key === 'employeeName' &&
-                                  violationSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            직원명{' '}
-                            {violationSortConfig.key === 'employeeName' && (
-                              <span>
-                                {violationSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setViolationSortConfig({
-                                key: 'weekPeriod',
-                                direction:
-                                  violationSortConfig.key === 'weekPeriod' &&
-                                  violationSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            해당 주 기간{' '}
-                            {violationSortConfig.key === 'weekPeriod' && (
-                              <span>
-                                {violationSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                          <th
-                            className="p-3 text-center font-semibold cursor-pointer hover:bg-gray-300"
-                            onClick={() => {
-                              setViolationSortConfig({
-                                key: 'violationHours',
-                                direction:
-                                  violationSortConfig.key ===
-                                    'violationHours' &&
-                                  violationSortConfig.direction === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                              });
-                            }}
-                          >
-                            위반 시간{' '}
-                            {violationSortConfig.key === 'violationHours' && (
-                              <span>
-                                {violationSortConfig.direction === 'asc'
-                                  ? '▲'
-                                  : '▼'}
-                              </span>
-                            )}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
-                          let detailData = getWorkLifeDetailDataUtil(
-                            selectedYear,
-                            workLifeDetailMonth,
-                            '주 52시간 위반',
-                            employees,
-                            getDaysInMonth,
-                            detailPopupGetAttendanceForEmployee,
-                            isHolidayDate,
-                            leaveRequests,
-                            calcDailyWage,
-                            calculateAnnualLeave,
-                            safetyAccidents,
-                            suggestions,
-                            evaluations,
-                            notices
-                          );
+                                // Apply sorting
+                                if (violationSortConfig.key) {
+                                  detailData = [...detailData].sort((a, b) => {
+                                    let aVal = a[violationSortConfig.key];
+                                    let bVal = b[violationSortConfig.key];
 
-                          // Apply sorting
-                          if (violationSortConfig.key) {
-                            detailData = [...detailData].sort((a, b) => {
-                              let aVal = a[violationSortConfig.key];
-                              let bVal = b[violationSortConfig.key];
+                                    // Handle numeric comparison for violationHours field
+                                    if (
+                                      violationSortConfig.key ===
+                                      'violationHours'
+                                    ) {
+                                      aVal = Number(aVal);
+                                      bVal = Number(bVal);
+                                      return violationSortConfig.direction ===
+                                        'asc'
+                                        ? aVal - bVal
+                                        : bVal - aVal;
+                                    }
 
-                              // Handle numeric comparison for violationHours field
-                              if (
-                                violationSortConfig.key === 'violationHours'
-                              ) {
-                                aVal = Number(aVal);
-                                bVal = Number(bVal);
-                                return violationSortConfig.direction === 'asc'
-                                  ? aVal - bVal
-                                  : bVal - aVal;
-                              }
+                                    // String comparison for other fields
+                                    if (
+                                      violationSortConfig.direction === 'asc'
+                                    ) {
+                                      return String(aVal).localeCompare(
+                                        String(bVal)
+                                      );
+                                    } else {
+                                      return String(bVal).localeCompare(
+                                        String(aVal)
+                                      );
+                                    }
+                                  });
+                                }
 
-                              // String comparison for other fields
-                              if (violationSortConfig.direction === 'asc') {
-                                return String(aVal).localeCompare(String(bVal));
-                              } else {
-                                return String(bVal).localeCompare(String(aVal));
-                              }
-                            });
-                          }
+                                if (detailData.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td
+                                        colSpan="3"
+                                        className="p-4 text-center text-gray-500"
+                                      >
+                                        해당 월에 주 52시간 위반 기록이
+                                        없습니다.
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                return detailData.map((item, index) => (
+                                  <tr
+                                    key={index}
+                                    className="border-b hover:bg-gray-50"
+                                  >
+                                    <td className="p-3 text-center">
+                                      {item.employeeName}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.weekPeriod}
+                                    </td>
+                                    <td className="p-3 text-center font-semibold text-red-600">
+                                      {item.violationHours}시간
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
 
-                          if (detailData.length === 0) {
-                            return (
-                              <tr>
-                                <td
-                                  colSpan="3"
-                                  className="p-4 text-center text-gray-500"
-                                >
-                                  해당 월에 주 52시간 위반 기록이 없습니다.
-                                </td>
+                    {workLifeDetailMetric === '스트레스 지수' && (
+                      <div>
+                        <div className="mb-4 text-sm text-gray-600">
+                          {selectedYear}년 {workLifeDetailMonth + 1}월 직원별
+                          스트레스 지수입니다.
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-gray-200">
+                                <th className="p-3 text-center font-semibold">
+                                  직원명
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  부서
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  직급
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  스트레스 지수
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  근무시간
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  연차사용률
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  직급가중
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  안전사고
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  건의사항
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  평가점수
+                                </th>
+                                <th className="p-3 text-center font-semibold">
+                                  중요공지
+                                </th>
                               </tr>
-                            );
-                          }
-                          return detailData.map((item, index) => (
-                            <tr
-                              key={index}
-                              className="border-b hover:bg-gray-50"
-                            >
-                              <td className="p-3 text-center">
-                                {item.employeeName}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.weekPeriod}
-                              </td>
-                              <td className="p-3 text-center font-semibold text-red-600">
-                                {item.violationHours}시간
-                              </td>
-                            </tr>
-                          ));
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
+                                const detailData = getWorkLifeDetailDataUtil(
+                                  selectedYear,
+                                  workLifeDetailMonth,
+                                  '스트레스 지수',
+                                  employees,
+                                  getDaysInMonth,
+                                  detailPopupGetAttendanceForEmployee,
+                                  isHolidayDate,
+                                  leaveRequests,
+                                  calcDailyWage,
+                                  calculateAnnualLeave,
+                                  safetyAccidents,
+                                  suggestions,
+                                  evaluations,
+                                  notices
+                                );
+                                if (detailData.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td
+                                        colSpan="11"
+                                        className="p-4 text-center text-gray-500"
+                                      >
+                                        해당 월에 스트레스 데이터가 없습니다.
+                                      </td>
+                                    </tr>
+                                  );
+                                }
 
-              {workLifeDetailMetric === '스트레스 지수' && (
-                <div>
-                  <div className="mb-4 text-sm text-gray-600">
-                    {selectedYear}년 {workLifeDetailMonth + 1}월 직원별 스트레스 지수입니다.
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-3 text-center font-semibold">
-                            직원명
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            부서
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            직급
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            스트레스 지수
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            근무시간
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            연차사용률
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            직급가중
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            안전사고
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            건의사항
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            평가점수
-                          </th>
-                          <th className="p-3 text-center font-semibold">
-                            중요공지
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          // getWorkLifeDetailDataUtil 직접 호출하여 workLifeDetailMonthData 사용
-                          const detailData = getWorkLifeDetailDataUtil(
-                            selectedYear,
-                            workLifeDetailMonth,
-                            '스트레스 지수',
-                            employees,
-                            getDaysInMonth,
-                            detailPopupGetAttendanceForEmployee,
-                            isHolidayDate,
-                            leaveRequests,
-                            calcDailyWage,
-                            calculateAnnualLeave,
-                            safetyAccidents,
-                            suggestions,
-                            evaluations,
-                            notices
-                          );
-                          if (detailData.length === 0) {
-                            return (
-                              <tr>
-                                <td
-                                  colSpan="11"
-                                  className="p-4 text-center text-gray-500"
-                                >
-                                  해당 월에 스트레스 데이터가 없습니다.
-                                </td>
-                              </tr>
-                            );
-                          }
-
-                          return detailData.map((item, index) => (
-                            <tr
-                              key={index}
-                              className="border-b hover:bg-gray-50"
-                            >
-                              <td className="p-3 text-center">
-                                {item.employeeName}
-                              </td>
-                              <td className="p-3 text-center">
-                                {item.department}
-                              </td>
-                              <td className="p-3 text-center">
-                                {item.position}
-                              </td>
-                              <td className="p-3 text-center font-semibold text-red-600">
-                                {item.value}점
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.근무시간}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.연차사용률}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.직급}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.안전사고}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.건의사항}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.평가점수}
-                              </td>
-                              <td className="p-3 text-center text-gray-700">
-                                {item.중요공지}
-                              </td>
-                            </tr>
-                          ));
-                        })()}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                                return detailData.map((item, index) => (
+                                  <tr
+                                    key={index}
+                                    className="border-b hover:bg-gray-50"
+                                  >
+                                    <td className="p-3 text-center">
+                                      {item.employeeName}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      {item.department}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      {item.position}
+                                    </td>
+                                    <td className="p-3 text-center font-semibold text-red-600">
+                                      {item.value}점
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.근무시간}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.연차사용률}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.직급}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.안전사고}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.건의사항}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.평가점수}
+                                    </td>
+                                    <td className="p-3 text-center text-gray-700">
+                                      {item.중요공지}
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </>
                 );
               })()}
@@ -3706,7 +3880,11 @@ const AdminDashboard = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
-                    if (window.confirm('모든 AI 추천사항 기록을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
+                    if (
+                      window.confirm(
+                        '모든 AI 추천사항 기록을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.'
+                      )
+                    ) {
                       localStorage.removeItem('aiRecommendationHistory');
                       setAiRecommendationHistory([]);
                       alert('✅ 모든 기록이 삭제되었습니다.');

@@ -13,7 +13,7 @@ import {
   EXCLUDE_EXTRA_RANKS,
   EXCLUDE_TIME,
   excludeBreakTimes,
-  roundDownToHalfHour
+  roundDownToHalfHour,
 } from './common_common';
 import { SafetyAccidentAPI } from '../../api/safety';
 import { NotificationAPI } from '../../api/communication';
@@ -1238,7 +1238,8 @@ export const useDashboardActions = ({
       try {
         // AttendanceAPI import가 필요하지만, 이 파일에서는 직접 import할 수 없으므로
         // api client를 동적으로 import하거나 BASE_URL을 사용
-        const BASE_URL = 'http://localhost:5000/api';
+        const BASE_URL =
+          process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
         const promises = [];
         for (let month = 1; month <= monthsToLoad; month++) {
@@ -3434,7 +3435,9 @@ export const send52HourViolationAlert = (
     try {
       const notificationLogData = {
         notificationType: '시스템',
-        title: `근무시간 ${currentHours >= 52 ? '위반' : '경고'} 알림 - ${employeeName}`,
+        title: `근무시간 ${
+          currentHours >= 52 ? '위반' : '경고'
+        } 알림 - ${employeeName}`,
         content: alertMessages[alertLevel],
         status: '진행중', // 직원들이 볼 수 있도록 '진행중' 상태로 저장
         startDate: new Date().toISOString().split('T')[0],
@@ -3910,7 +3913,9 @@ export const getWorkLifeBalanceDataByYearUtil = (
             attendanceData.checkIn,
             attendanceData.checkOut,
             emp.workType || 'day',
-            `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+            `${year}-${String(month + 1).padStart(2, '0')}-${String(
+              day
+            ).padStart(2, '0')}`
           );
 
           // totalWorkMinutes에서 기본 8시간을 뺀 나머지가 특근시간
@@ -4352,11 +4357,13 @@ export const getWorkLifeDetailDataUtil = (
   );
 
   // isHoliday 함수 - 파라미터로 받지 못한 경우 기본 함수 사용
-  const isHoliday = isHolidayFn || ((date) => {
-    const dateObj = new Date(date);
-    const dayOfWeek = dateObj.getDay();
-    return dayOfWeek === 0 || dayOfWeek === 6; // 주말만 휴일로 판정
-  });
+  const isHoliday =
+    isHolidayFn ||
+    ((date) => {
+      const dateObj = new Date(date);
+      const dayOfWeek = dateObj.getDay();
+      return dayOfWeek === 0 || dayOfWeek === 6; // 주말만 휴일로 판정
+    });
 
   if (metric === '평균 특근시간') {
     filteredEmps.forEach((emp) => {

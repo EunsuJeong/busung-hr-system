@@ -164,7 +164,10 @@ const StaffNotice = ({
                                     </div>
                                     {fileUrl && (
                                       <a
-                                        href={`http://localhost:5000/api/communication/download/${fileUrl
+                                        href={`${
+                                          process.env.REACT_APP_API_BASE_URL ||
+                                          'http://localhost:5000/api'
+                                        }/communication/download/${fileUrl
                                           .split('/')
                                           .pop()}`}
                                         download={fileName}
@@ -452,7 +455,10 @@ const StaffNotice = ({
                                     </div>
                                     {fileUrl ? (
                                       <a
-                                        href={`http://localhost:5000/api/communication/download/${fileUrl
+                                        href={`${
+                                          process.env.REACT_APP_API_BASE_URL ||
+                                          'http://localhost:5000/api'
+                                        }/communication/download/${fileUrl
                                           .split('/')
                                           .pop()}`}
                                         download={fileName}
