@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>부성스틸 HR 앱 다운로드</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+      }
+      .logo {
+        width: 100px;
+        height: 100px;
+        background: #0056b3;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 48px;
+        color: white;
+        font-weight: bold;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+      .version {
+        color: #888;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+      .features {
+        background: #f5f7fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: left;
+      }
+      .feature {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        color: #555;
+      }
+      .feature:last-child {
+        margin-bottom: 0;
+      }
+      .feature-icon {
+        font-size: 24px;
+        margin-right: 12px;
+      }
+      .download-btn {
+        display: inline-block;
+        background: #0056b3;
+        color: white;
+        padding: 16px 40px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
+      }
+      .download-btn:hover {
+        background: #004494;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 86, 179, 0.4);
+      }
+      .instructions {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid #e0e0e0;
+      }
+      .instructions h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+      }
+      .step {
+        text-align: left;
+        margin-bottom: 10px;
+        color: #666;
+        line-height: 1.6;
+      }
+      .warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 20px;
+        color: #856404;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">부</div>
+      <h1>부성스틸 HR 앱</h1>
+      <div class="version">버전 1.0</div>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">✅</span>
+          <span>근태 관리 및 출퇴근 기록</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📅</span>
+          <span>연차 신청 및 조회</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">💰</span>
+          <span>급여 명세서 확인</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📢</span>
+          <span>공지사항 및 알림</span>
+        </div>
+      </div>
+
+      <a href="/download/busungsteel-hr.apk" download class="download-btn">
+        📱 앱 다운로드
+      </a>
+
+      <div class="instructions">
+        <h3>📝 설치 방법</h3>
+        <div class="step">1. 위 버튼을 눌러 APK 파일 다운로드</div>
+        <div class="step">2. 다운로드 완료 후 파일 실행</div>
+        <div class="step">3. "출처를 알 수 없는 앱" 허용</div>
+        <div class="step">4. 설치 버튼 클릭</div>
+      </div>
+
+      <div class="warning">
+        ⚠️ Android 전용 앱입니다. iOS는 Safari에서 웹 버전을 홈 화면에
+        추가하세요.
+      </div>
+    </div>
+  </body>
+</html>

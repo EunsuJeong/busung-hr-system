@@ -2,81 +2,81 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: 코드 체크아웃
-      uses: actions/checkout@v4
-      
-    - name: Node.js 설정
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        
-    - name: Java 21 설정
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-        
-    - name: 파일 구조 확인
-      run: |
-        echo "=== Root directory ==="
-        ls -la
-        echo "=== Client directory ==="
-        ls -la client/
-        echo "=== package.json check ==="
-        cat client/package.json | head -20
-      
-    - name: 의존성 설치
-      working-directory: ./client
-      run: |
-        echo "Installing dependencies..."
-        npm install --legacy-peer-deps
-        echo "Dependencies installed!"
-      
-    - name: 프로덕션 빌드
-      working-directory: ./client
-      env:
-        CI: false
-        REACT_APP_API_BASE_URL: https://jubilant-happiness-production-4c15.up.railway.app/api
-        REACT_APP_SERVER_URL: https://jubilant-happiness-production-4c15.up.railway.app
-      run: |
-        echo "Starting production build..."
-        npm run build
-        echo "Build completed!"
-        ls -la build/
-      
-    - name: Capacitor 동기화
-      working-directory: ./client
-      run: npx cap sync android
-      
-    - name: Gradle 권한 설정
-      working-directory: ./client/android
-      run: chmod +x gradlew
-      
-    - name: APK 빌드
-      working-directory: ./client/android
-      run: |
-        echo "Using Java version:"
-        java -version
-        ./gradlew assembleDebug --stacktrace
-      
-    - name: APK 파일 업로드
-      uses: actions/upload-artifact@v4
-      with:
-        name: busungsteel-hr-app
-        path: client/android/app/build/outputs/apk/debug/app-debug.apk
-        
-    - name: Release 생성 (태그가 있는 경우)
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: client/android/app/build/outputs/apk/debug/app-debug.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Java 21 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 파일 구조 확인
+        run: |
+          echo "=== Root directory ==="
+          ls -la
+          echo "=== Client directory ==="
+          ls -la client/
+          echo "=== package.json check ==="
+          cat client/package.json | head -20
+
+      - name: 의존성 설치
+        working-directory: ./client
+        run: |
+          echo "Installing dependencies..."
+          npm install --legacy-peer-deps
+          echo "Dependencies installed!"
+
+      - name: 프로덕션 빌드
+        working-directory: ./client
+        env:
+          CI: false
+          REACT_APP_API_BASE_URL: https://jubilant-happiness-production-4c15.up.railway.app/api
+          REACT_APP_SERVER_URL: https://jubilant-happiness-production-4c15.up.railway.app
+        run: |
+          echo "Starting production build..."
+          npm run build
+          echo "Build completed!"
+          ls -la build/
+
+      - name: Capacitor 동기화
+        working-directory: ./client
+        run: npx cap sync android
+
+      - name: Gradle 권한 설정
+        working-directory: ./client/android
+        run: chmod +x gradlew
+
+      - name: APK 빌드
+        working-directory: ./client/android
+        run: |
+          echo "Using Java version:"
+          java -version
+          ./gradlew assembleDebug --stacktrace
+
+      - name: APK 파일 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: busungsteel-hr-app
+          path: client/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Release 생성 (태그가 있는 경우)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: client/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
