@@ -170,11 +170,21 @@ router.get('/download/:fileId', async (req, res) => {
 
     console.log('📥 파일 다운로드 요청 (GridFS):', fileId);
 
+    // 기존 파일 경로 형식인 경우 (예: KakaoTalk_20240502...)
+    if (fileId.includes('.') || fileId.includes('-') && fileId.length > 24) {
+      console.log('⚠️ 기존 파일 시스템 경로 (복구 불가):', fileId);
+      return res.status(410).json({ 
+        message: '이 파일은 이전 시스템에서 저장되어 현재 사용할 수 없습니다. 관리자에게 문의하세요.',
+        isLegacyFile: true 
+      });
+    }
+
     // ObjectId로 변환
     let objectId;
     try {
       objectId = new mongoose.Types.ObjectId(fileId);
     } catch (e) {
+      console.log('❌ 잘못된 파일 ID:', fileId);
       return res.status(400).json({ message: '잘못된 파일 ID입니다.' });
     }
 
