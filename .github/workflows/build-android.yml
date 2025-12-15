@@ -24,9 +24,21 @@ jobs:
         distribution: 'microsoft'
         java-version: '17'
         
+    - name: 파일 구조 확인
+      run: |
+        echo "=== Root directory ==="
+        ls -la
+        echo "=== Client directory ==="
+        ls -la client/
+        echo "=== package.json check ==="
+        cat client/package.json | head -20
+      
     - name: 의존성 설치
       working-directory: ./client
-      run: npm install
+      run: |
+        echo "Installing dependencies..."
+        npm install --legacy-peer-deps
+        echo "Dependencies installed!"
       
     - name: 프로덕션 빌드
       working-directory: ./client
@@ -34,7 +46,11 @@ jobs:
         CI: false
         REACT_APP_API_BASE_URL: https://jubilant-happiness-production-4c15.up.railway.app/api
         REACT_APP_SERVER_URL: https://jubilant-happiness-production-4c15.up.railway.app
-      run: npm run build
+      run: |
+        echo "Starting production build..."
+        npm run build
+        echo "Build completed!"
+        ls -la build/
       
     - name: Capacitor 동기화
       working-directory: ./client
