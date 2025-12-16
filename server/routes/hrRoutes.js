@@ -17,7 +17,7 @@ const parseDateString = (dateStr) => {
   if (!dateStr) return null;
   // moment-timezone을 사용하여 KST 기준 00:00:00으로 Date 객체 생성
   // DB에는 UTC로 저장되지만, KST로 읽을 때 정확한 날짜가 표시됨
-  return moment.tz(dateStr, "YYYY-MM-DD", "Asia/Seoul").startOf("day").toDate();
+  return moment.tz(dateStr, 'YYYY-MM-DD', 'Asia/Seoul').startOf('day').toDate();
 };
 
 // Date 객체를 YYYY-MM-DD 문자열로 변환 (로컬 시간대 기준)
@@ -94,7 +94,9 @@ router.put('/employees/:employeeId/password', async (req, res) => {
     const { employeeId } = req.params;
     const { currentPassword, newPassword } = req.body;
 
-    console.log(`🔐 [Employees API] 비밀번호 변경 요청: employeeId=${employeeId}`);
+    console.log(
+      `🔐 [Employees API] 비밀번호 변경 요청: employeeId=${employeeId}`
+    );
 
     // 직원 찾기
     const employee = await Employee.findOne({ employeeId });
@@ -982,7 +984,9 @@ router.post('/analyze-work-type', async (req, res) => {
     }
 
     const targetInfo = employeeId ? `직원 ${employeeId}` : '모든 직원';
-    console.log(`🔍 [근무형태 분석] ${year}년 ${month}월 ${targetInfo} 시작...`);
+    console.log(
+      `🔍 [근무형태 분석] ${year}년 ${month}월 ${targetInfo} 시작...`
+    );
 
     // 1. 해당 월의 근태 데이터 조회 (employeeId가 있으면 특정 직원만)
     const query = {
@@ -997,7 +1001,9 @@ router.post('/analyze-work-type', async (req, res) => {
 
     const attendances = await Attendance.find(query);
 
-    console.log(`📊 [근무형태 분석] 근태 데이터 ${attendances.length}건 조회 (${targetInfo})`);
+    console.log(
+      `📊 [근무형태 분석] 근태 데이터 ${attendances.length}건 조회 (${targetInfo})`
+    );
 
     // 2. 직원별로 그룹화
     const employeeAttendance = {};
@@ -1011,7 +1017,9 @@ router.post('/analyze-work-type', async (req, res) => {
 
     // 3. 각 직원의 근무형태 분석
     const updates = [];
-    for (const [employeeId, checkInTimes] of Object.entries(employeeAttendance)) {
+    for (const [employeeId, checkInTimes] of Object.entries(
+      employeeAttendance
+    )) {
       let dayShiftCount = 0;
       let nightShiftCount = 0;
 
@@ -1076,7 +1084,9 @@ router.post('/analyze-work-type', async (req, res) => {
     }
 
     console.log(
-      `✅ [근무형태 분석] 완료: ${updatedCount}명 업데이트 (전체 ${Object.keys(employeeAttendance).length}명 중)`
+      `✅ [근무형태 분석] 완료: ${updatedCount}명 업데이트 (전체 ${
+        Object.keys(employeeAttendance).length
+      }명 중)`
     );
 
     // Socket.io 이벤트 발생

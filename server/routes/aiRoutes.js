@@ -1228,6 +1228,20 @@ ${JSON.stringify(notifications, null, 2)}
   } catch (err) {
     console.error('❌ [POST /ai/query] 오류:', err);
 
+    // Rate Limit 에러 처리
+    let userFriendlyMessage = err.message;
+    let statusCode = 500;
+    
+    if (err.message.includes('Rate limit reached')) {
+      statusCode = 429;
+      const waitMatch = err.message.match(/try again in ([\d.]+)s/);
+      const waitTime = waitMatch ? Math.ceil(parseFloat(waitMatch[1])) : 30;
+      userFriendlyMessage = `⏱️ API 사용량 한도에 도달했습니다. ${waitTime}초 후에 다시 시도해주세요.\n\n💡 팁: 짧은 질문으로 나눠서 물어보시면 더 빠르게 응답받을 수 있습니다.`;
+    } else if (err.message.includes('API 오류')) {
+      statusCode = 503;
+      userFriendlyMessage = `🔧 AI 서비스에 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.\n\n오류 상세: ${err.message}`;
+    }
+
     // ✅ 오류도 DB에 저장
     try {
       const aiLog = new AiLog({
@@ -1242,7 +1256,11 @@ ${JSON.stringify(notifications, null, 2)}
       console.error('⚠️ [AI Query] 오류 로그 저장 실패:', logError);
     }
 
-    res.status(500).json({ error: err.message });
+    res.status(statusCode).json({ 
+      error: userFriendlyMessage,
+      originalError: err.message,
+      retryAfter: err.message.includes('Rate limit') ? 30 : null
+    });
   }
 });
 

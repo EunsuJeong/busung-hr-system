@@ -2957,6 +2957,19 @@ const HRManagementSystem = () => {
   );
 
   //---[3_일반직원 모드] 3.6_급여 내역 STATE---//
+
+  // *[2_관리자 모드] 2.12.10_모델 선택 관리* (useSystemManagement보다 먼저 선언)
+  const {
+    selectedModelType,
+    setSelectedModelType,
+    modelUsageStatus,
+    setModelUsageStatus,
+    apiConnectionStatus,
+    setApiConnectionStatus,
+    dynamicModelTypes,
+    setDynamicModelTypes,
+  } = useModelSelection();
+
   //---[2_관리자 모드] 2.12_시스템 관리 STATE---//
   const {
     geminiApiKey,
@@ -2996,19 +3009,7 @@ const HRManagementSystem = () => {
     setAiRecommendation,
     getSafeModelOrBlock,
     saveKey,
-  } = useSystemManagement(devLog);
-
-  // *[2_관리자 모드] 2.12.10_모델 선택 관리*
-  const {
-    selectedModelType,
-    setSelectedModelType,
-    modelUsageStatus,
-    setModelUsageStatus,
-    apiConnectionStatus,
-    setApiConnectionStatus,
-    dynamicModelTypes,
-    setDynamicModelTypes,
-  } = useModelSelection();
+  } = useSystemManagement(devLog, setModelUsageStatus);
 
   // *[2_관리자 모드] 2.11.1_챗봇 권한 STATE*
   const { chatbotPermissions, setChatbotPermissions } = useChatbotPermissions();
@@ -6308,6 +6309,7 @@ const HRManagementSystem = () => {
             chatgptApiKey={chatgptApiKey}
             claudeApiKey={claudeApiKey}
             geminiApiKey={geminiApiKey}
+            unifiedApiKey={unifiedApiKey}
             chatbotPermissions={chatbotPermissions}
             chatMessages={aiMessages}
             chatInput={aiInput}

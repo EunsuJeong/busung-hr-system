@@ -948,7 +948,11 @@ export const sendChat = async (
  * @returns {string|undefined} 활성화된 모델명
  */
 export const getActiveModel = (modelUsageStatus) => {
-  return Object.keys(modelUsageStatus).find((key) => modelUsageStatus[key]);
+  const key = Object.keys(modelUsageStatus).find(
+    (key) => modelUsageStatus[key]
+  );
+  // openai는 chatgpt로 매핑
+  return key === 'openai' ? 'chatgpt' : key;
 };
 
 /**
@@ -958,18 +962,47 @@ export const getActiveModel = (modelUsageStatus) => {
  * @returns {boolean} API 키 존재 여부
  */
 export const checkApiKeyByModel = (activeModel, apiKeys) => {
-  const { chatgptApiKey, claudeApiKey, geminiApiKey } = apiKeys;
+  const { chatgptApiKey, claudeApiKey, geminiApiKey, unifiedApiKey } = apiKeys;
 
-  if (!activeModel) return false;
+  console.log('🔍 [checkApiKeyByModel] 함수 호출:');
+  console.log('- activeModel:', activeModel);
+  console.log(
+    '- unifiedApiKey:',
+    unifiedApiKey ? `있음 (길이: ${unifiedApiKey.length})` : '없음'
+  );
+  console.log('- chatgptApiKey:', chatgptApiKey ? '있음' : '없음');
+  console.log('- claudeApiKey:', claudeApiKey ? '있음' : '없음');
+  console.log('- geminiApiKey:', geminiApiKey ? '있음' : '없음');
 
+  if (!activeModel) {
+    console.log('❌ activeModel이 없음 -> false 반환');
+    return false;
+  }
+
+  // 통합 API 키가 있으면 true 반환
+  if (unifiedApiKey && unifiedApiKey.trim().length > 0) {
+    console.log('✅ unifiedApiKey 있음 -> true 반환');
+    return true;
+  }
+
+  // 개별 API 키 체크 (openai와 chatgpt 모두 처리)
+  let result = false;
   switch (activeModel) {
     case 'chatgpt':
-      return !!chatgptApiKey;
+    case 'openai':
+      result = !!chatgptApiKey;
+      console.log(`📝 ${activeModel} 체크 -> chatgptApiKey: ${result}`);
+      return result;
     case 'claude':
-      return !!claudeApiKey;
+      result = !!claudeApiKey;
+      console.log(`📝 claude 체크 -> claudeApiKey: ${result}`);
+      return result;
     case 'gemini':
-      return !!geminiApiKey;
+      result = !!geminiApiKey;
+      console.log(`📝 gemini 체크 -> geminiApiKey: ${result}`);
+      return result;
     default:
+      console.log(`❌ 알 수 없는 모델: ${activeModel} -> false 반환`);
       return false;
   }
 };

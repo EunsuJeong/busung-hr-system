@@ -12,7 +12,8 @@ import * as CommonAIService from './common_admin_ai';
 // [2_관리자 모드] 2.12_시스템 관리 - CONSTANTS
 // ============================================================
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 const FAIL_MSG = CommonAIService.FAIL_MSG;
 const ALL_MODELS = CommonAIService.ALL_MODELS;
 const ALLOW_MODEL_LIST = CommonAIService.ALLOW_MODEL_LIST;
@@ -86,9 +87,13 @@ export const useModelSelection = () => {
 /**
  * 시스템 관리 및 AI 설정을 관리하는 커스텀 훅
  * @param {Function} devLog - 개발 로그 함수
+ * @param {Function} setModelUsageStatus - 모델 사용 상태 업데이트 함수
  * @returns {Object} 시스템 관리 관련 STATE 및 함수들
  */
-export const useSystemManagement = (devLog = console.log) => {
+export const useSystemManagement = (
+  devLog = console.log,
+  setModelUsageStatus = null
+) => {
   // *[2_관리자 모드] 2.12_시스템 관리 STATE*
   const [geminiApiKey, setGeminiApiKey] = useState(
     process.env.REACT_APP_GEMINI_API_KEY || ''
@@ -175,9 +180,16 @@ export const useSystemManagement = (devLog = console.log) => {
       const provider = detectProviderFromKey(unifiedApiKey);
       setDetectedProvider(provider);
 
-      if (provider && provider !== 'unknown' && provider !== '' && unifiedApiKey.trim().length > 10) {
+      if (
+        provider &&
+        provider !== 'unknown' &&
+        provider !== '' &&
+        unifiedApiKey.trim().length > 10
+      ) {
         try {
-          devLog(`🔍 [API 키 검증] Provider: ${provider}, 실제 사용 가능한 모델 조회 중...`);
+          devLog(
+            `🔍 [API 키 검증] Provider: ${provider}, 실제 사용 가능한 모델 조회 중...`
+          );
 
           // ✅ 실제 사용 가능한 모델 목록 조회 (API 키 검증 포함)
           const response = await fetch(
@@ -187,8 +199,8 @@ export const useSystemManagement = (devLog = console.log) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 provider: provider,
-                apiKey: unifiedApiKey
-              })
+                apiKey: unifiedApiKey,
+              }),
             }
           );
 
@@ -196,7 +208,10 @@ export const useSystemManagement = (devLog = console.log) => {
             const data = await response.json();
             if (data.success && data.models) {
               setAvailableModels(data.models);
-              devLog(`✅ ${provider} 실제 사용 가능한 모델 ${data.models.length}개 조회 완료:`, data.models);
+              devLog(
+                `✅ ${provider} 실제 사용 가능한 모델 ${data.models.length}개 조회 완료:`,
+                data.models
+              );
 
               // 첫 번째 모델 자동 선택
               if (data.models.length > 0 && !selectedUnifiedModel) {
@@ -272,6 +287,20 @@ export const useSystemManagement = (devLog = console.log) => {
         );
         devLog('✅ 통합 AI 설정 저장 완료:', data);
 
+        // modelUsageStatus 업데이트
+        if (setModelUsageStatus && detectedProvider) {
+          const provider =
+            detectedProvider === 'openai' ? 'chatgpt' : detectedProvider;
+          const newStatus = {
+            chatgpt: provider === 'chatgpt',
+            claude: provider === 'claude',
+            gemini: provider === 'gemini',
+          };
+          setModelUsageStatus(newStatus);
+          localStorage.setItem('modelUsageStatus', JSON.stringify(newStatus));
+          devLog('✅ 모델 사용 상태 업데이트:', newStatus);
+        }
+
         setTimeout(() => setUnifiedSaveMessage(''), 3000);
       } else {
         const errorData = await response.json();
@@ -300,6 +329,20 @@ export const useSystemManagement = (devLog = console.log) => {
           setDetectedProvider(config.provider || '');
           setSelectedUnifiedModel(config.model || '');
           devLog('✅ AI 통합 설정 로드 완료:', config);
+
+          // modelUsageStatus 업데이트
+          if (setModelUsageStatus && config.provider) {
+            const provider =
+              config.provider === 'openai' ? 'chatgpt' : config.provider;
+            const newStatus = {
+              chatgpt: provider === 'chatgpt',
+              claude: provider === 'claude',
+              gemini: provider === 'gemini',
+            };
+            setModelUsageStatus(newStatus);
+            localStorage.setItem('modelUsageStatus', JSON.stringify(newStatus));
+            devLog('✅ 모델 사용 상태 업데이트:', newStatus);
+          }
         } else {
           devLog('⚠️ AI 설정 로드 실패, 기본값 사용');
           setAiConfig({ provider: '', model: '', apiKey: '' });
@@ -361,29 +404,32 @@ export const useSystemManagement = (devLog = console.log) => {
   }, []);
 
   // *[2_관리자 모드] 2.12_API Key 저장*
-  const saveKey = useCallback(async (keyType, keyValue) => {
-    if (!keyValue?.trim()) {
-      alert('API Key를 입력해주세요.');
-      return;
-    }
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/system/update-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyType, keyValue }),
-      });
-      if (!res.ok) throw new Error('SAVE_FAIL');
+  const saveKey = useCallback(
+    async (keyType, keyValue) => {
+      if (!keyValue?.trim()) {
+        alert('API Key를 입력해주세요.');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/system/update-key`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyType, keyValue }),
+        });
+        if (!res.ok) throw new Error('SAVE_FAIL');
 
-      if (keyType === 'OPENAI_API_KEY') setChatgptApiKey('');
-      if (keyType === 'ANTHROPIC_API_KEY') setClaudeApiKey('');
-      if (keyType === 'GEMINI_API_KEY') setGeminiApiKey('');
+        if (keyType === 'OPENAI_API_KEY') setChatgptApiKey('');
+        if (keyType === 'ANTHROPIC_API_KEY') setClaudeApiKey('');
+        if (keyType === 'GEMINI_API_KEY') setGeminiApiKey('');
 
-      alert('API Key가 저장되었습니다.');
-    } catch (error) {
-      devLog('API Key 저장 실패:', error);
-      alert(FAIL_MSG);
-    }
-  }, [devLog]);
+        alert('API Key가 저장되었습니다.');
+      } catch (error) {
+        devLog('API Key 저장 실패:', error);
+        alert(FAIL_MSG);
+      }
+    },
+    [devLog]
+  );
 
   return {
     geminiApiKey,
@@ -581,7 +627,6 @@ export const useSystemStatus = ({
     executeWithPermissionCheck,
   };
 };
-
 
 // ============================================================
 // [2_관리자 모드] 2.11~2.12_시스템 관리 - UTILS

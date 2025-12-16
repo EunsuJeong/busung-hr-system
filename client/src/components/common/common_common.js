@@ -2171,6 +2171,13 @@ ${internalContext.safetyAccidents
         const errorData = await response
           .json()
           .catch(() => ({ message: FAIL_MSG }));
+        
+        // Rate Limit 에러 특별 처리
+        if (response.status === 429) {
+          const retryAfter = errorData?.retryAfter || 30;
+          throw new Error(`RATE_LIMIT:${retryAfter}:${errorData?.error || errorData?.message || '사용량 한도 초과'}`);
+        }
+        
         throw new Error(errorData?.error || errorData?.message || FAIL_MSG);
       }
 

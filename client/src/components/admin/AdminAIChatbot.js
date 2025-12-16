@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   AlertCircle,
@@ -14,6 +14,7 @@ const AdminAIChatbot = ({
   chatgptApiKey,
   claudeApiKey,
   geminiApiKey,
+  unifiedApiKey,
   chatbotPermissions,
   chatMessages,
   chatInput,
@@ -29,6 +30,7 @@ const AdminAIChatbot = ({
     chatgptApiKey,
     claudeApiKey,
     geminiApiKey,
+    unifiedApiKey,
   });
 
   // 기록 모달 상태
@@ -164,6 +166,78 @@ const AdminAIChatbot = ({
                 AI 챗봇을 사용하려면 {activeModel.toUpperCase()} API 키를
                 설정해주세요.
               </p>
+
+              {/* 🔍 디버깅 정보 표시 */}
+              <div className="mb-4 p-4 bg-gray-100 rounded text-left text-xs font-mono overflow-auto max-h-96">
+                <div className="font-bold mb-2 text-base">
+                  🔍 실시간 디버깅 정보
+                </div>
+
+                <div className="mb-3 p-2 bg-white rounded">
+                  <div className="font-semibold text-blue-700 mb-1">
+                    Props 상태:
+                  </div>
+                  <div>
+                    activeModel:{' '}
+                    <span className="text-red-600">
+                      {activeModel || 'null'}
+                    </span>
+                  </div>
+                  <div>
+                    hasActiveModel:{' '}
+                    <span className="text-red-600">
+                      {hasActiveModel ? 'true' : 'false'}
+                    </span>
+                  </div>
+                  <div>
+                    hasApiKey:{' '}
+                    <span className="text-red-600">
+                      {hasApiKey ? 'true' : 'false'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mb-3 p-2 bg-white rounded">
+                  <div className="font-semibold text-green-700 mb-1">
+                    API Keys:
+                  </div>
+                  <div>
+                    unifiedApiKey:{' '}
+                    {unifiedApiKey
+                      ? `✅ 있음 (${unifiedApiKey.length}자)`
+                      : '❌ 없음'}
+                  </div>
+                  <div>
+                    chatgptApiKey: {chatgptApiKey ? '✅ 있음' : '❌ 없음'}
+                  </div>
+                  <div>
+                    claudeApiKey: {claudeApiKey ? '✅ 있음' : '❌ 없음'}
+                  </div>
+                  <div>
+                    geminiApiKey: {geminiApiKey ? '✅ 있음' : '❌ 없음'}
+                  </div>
+                </div>
+
+                <div className="mb-3 p-2 bg-white rounded">
+                  <div className="font-semibold text-purple-700 mb-1">
+                    modelUsageStatus (Props):
+                  </div>
+                  <pre className="whitespace-pre-wrap">
+                    {JSON.stringify(modelUsageStatus, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="mb-3 p-2 bg-yellow-50 rounded border border-yellow-300">
+                  <div className="font-semibold text-orange-700 mb-1">
+                    localStorage:
+                  </div>
+                  <div className="mb-1">modelUsageStatus:</div>
+                  <pre className="whitespace-pre-wrap text-xs">
+                    {localStorage.getItem('modelUsageStatus') || 'null'}
+                  </pre>
+                </div>
+              </div>
+
               <button
                 onClick={() => setActiveTab('system')}
                 className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
