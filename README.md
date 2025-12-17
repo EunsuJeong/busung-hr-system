@@ -2,6 +2,20 @@
 
 부성 인사관리 시스템 - React + Node.js + MongoDB
 
+## 📱 모바일 앱 다운로드
+
+### QR 코드로 빠른 다운로드
+
+`download-qr.html` 파일을 브라우저로 열어 QR 코드를 스캔하세요!
+
+### 다운로드 링크
+
+- 📗 **Android APK**: [GitHub Actions에서 다운로드](https://github.com/EunsuJeong/busung-hr-system/actions/workflows/android-build.yml)
+- 📘 **iOS IPA**: [GitHub Actions에서 다운로드](https://github.com/EunsuJeong/busung-hr-system/actions/workflows/ios-build.yml)
+- 🧪 **iOS 테스트**: [시뮬레이터 테스트 결과](https://github.com/EunsuJeong/busung-hr-system/actions/workflows/ios-test.yml)
+
+자세한 설치 가이드는 [DOWNLOAD.md](./DOWNLOAD.md)를 참고하세요.
+
 ## 📚 Documentation
 
 ### 시작하기
