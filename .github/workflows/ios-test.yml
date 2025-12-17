@@ -1,0 +1,125 @@
+name: Test iOS App on Simulator
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - '.github/workflows/ios-test.yml'
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci --legacy-peer-deps
+
+      - name: Build React app
+        working-directory: ./client
+        env:
+          CI: false
+          REACT_APP_API_BASE_URL: ${{ secrets.REACT_APP_API_BASE_URL }}
+        run: npm run build
+
+      - name: Sync Capacitor
+        working-directory: ./client
+        run: npx cap sync ios
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Create simulator if needed
+        run: |
+          # Check if iPhone 15 simulator exists
+          if ! xcrun simctl list devices | grep -q "iPhone 15"; then
+            xcrun simctl create "iPhone 15" com.apple.CoreSimulator.SimDeviceType.iPhone-15 com.apple.CoreSimulator.SimRuntime.iOS-17-0
+          fi
+
+      - name: Boot simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          echo "Device ID: $DEVICE_ID"
+          xcrun simctl boot $DEVICE_ID || echo "Simulator already booted"
+          sleep 10
+
+      - name: Build for simulator
+        working-directory: ./client/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            -destination 'platform=iOS Simulator,name=iPhone 15'
+
+      - name: Install app on simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          APP_PATH=$(find ./client/ios/App/build/Build/Products/Debug-iphonesimulator -name "*.app" -type d | head -1)
+          echo "Installing app from: $APP_PATH"
+          xcrun simctl install $DEVICE_ID "$APP_PATH"
+
+      - name: Launch app on simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          xcrun simctl launch $DEVICE_ID com.busungsteel.hr
+          sleep 5
+
+      - name: Take screenshot
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          mkdir -p screenshots
+          xcrun simctl io $DEVICE_ID screenshot screenshots/app_launch.png
+          echo "Screenshot saved"
+
+      - name: Get app logs
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          mkdir -p logs
+          xcrun simctl spawn $DEVICE_ID log collect --last 5m --output logs/app.logarchive || echo "Log collection failed"
+
+      - name: Check app status
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          echo "Checking if app is running..."
+          xcrun simctl listapps $DEVICE_ID | grep -A 5 "com.busungsteel.hr" || echo "App info not found"
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: screenshots/
+          if-no-files-found: warn
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-logs
+          path: logs/
+          if-no-files-found: warn
+
+      - name: Shutdown simulator
+        if: always()
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 15" | head -1 | grep -o '[0-9A-F]\{8\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{4\}-[0-9A-F]\{12\}')
+          xcrun simctl shutdown $DEVICE_ID || echo "Simulator already shut down"
