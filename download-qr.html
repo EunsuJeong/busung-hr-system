@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부성스틸 HR 시스템 - 앱 다운로드</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .android-icon {
+            background: linear-gradient(135deg, #3DDC84 0%, #07C160 100%);
+        }
+
+        .ios-icon {
+            background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .qr-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .qr-code {
+            display: inline-block;
+        }
+
+        .download-link {
+            display: block;
+            text-align: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: opacity 0.3s ease;
+        }
+
+        .download-link:hover {
+            opacity: 0.9;
+        }
+
+        .instructions {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .instructions ol {
+            margin-left: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .instructions li {
+            margin: 0.5rem 0;
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid white;
+        }
+
+        .footer a:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 부성스틸 HR 시스템</h1>
+
+        <div class="apps-grid">
+            <!-- Android Card -->
+            <div class="app-card">
+                <div class="app-header">
+                    <div class="app-icon android-icon">🤖</div>
+                    <div class="app-title">Android</div>
+                </div>
+
+                <div class="qr-container">
+                    <div id="qr-android" class="qr-code"></div>
+                </div>
+
+                <a href="https://github.com/EunsuJeong/busung-hr-system/actions/workflows/android-build.yml"
+                   class="download-link" target="_blank">
+                    APK 다운로드 페이지 열기
+                </a>
+
+                <div class="instructions">
+                    <h3>📥 설치 방법</h3>
+                    <ol>
+                        <li>QR 코드 스캔 또는 버튼 클릭</li>
+                        <li>최신 빌드의 Artifacts 섹션 확인</li>
+                        <li><code>app-release</code> 다운로드</li>
+                        <li>APK 파일을 Android 기기에 설치</li>
+                    </ol>
+                </div>
+
+                <div class="note">
+                    ⚠️ "알 수 없는 출처" 설치 허용 필요
+                </div>
+            </div>
+
+            <!-- iOS Card -->
+            <div class="app-card">
+                <div class="app-header">
+                    <div class="app-icon ios-icon">🍎</div>
+                    <div class="app-title">iOS</div>
+                </div>
+
+                <div class="qr-container">
+                    <div id="qr-ios" class="qr-code"></div>
+                </div>
+
+                <a href="https://github.com/EunsuJeong/busung-hr-system/actions/workflows/ios-build.yml"
+                   class="download-link" target="_blank">
+                    IPA 다운로드 페이지 열기
+                </a>
+
+                <div class="instructions">
+                    <h3>📥 다운로드 방법</h3>
+                    <ol>
+                        <li>QR 코드 스캔 또는 버튼 클릭</li>
+                        <li>최신 빌드의 Artifacts 섹션 확인</li>
+                        <li><code>ios-app</code> 다운로드</li>
+                        <li>IPA 파일 획득</li>
+                    </ol>
+                </div>
+
+                <div class="note">
+                    ⚠️ 직접 설치 불가 - Apple Developer 계정 필요<br>
+                    💡 시뮬레이터 테스트 결과는 "Test iOS App" 워크플로우에서 확인
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>GitHub Repository: <a href="https://github.com/EunsuJeong/busung-hr-system" target="_blank">busung-hr-system</a></p>
+            <p style="margin-top: 0.5rem; opacity: 0.8;">자세한 설치 가이드는 <a href="https://github.com/EunsuJeong/busung-hr-system/blob/main/DOWNLOAD.md" target="_blank">DOWNLOAD.md</a>를 참고하세요</p>
+        </div>
+    </div>
+
+    <script>
+        // Generate QR codes
+        new QRCode(document.getElementById("qr-android"), {
+            text: "https://github.com/EunsuJeong/busung-hr-system/actions/workflows/android-build.yml",
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        new QRCode(document.getElementById("qr-ios"), {
+            text: "https://github.com/EunsuJeong/busung-hr-system/actions/workflows/ios-build.yml",
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>
